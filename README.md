@@ -8,7 +8,7 @@ A personal fan-made toolkit for **Riftbound / 符文战场**, designed to link w
 ## 功能 Features
 
 * 读取与管理卡牌数据（含稀有度、符能、区域等信息）
-* 与 **TTS mod** 实时交互，实现卡牌导入、构筑同步
+~~* 与 **TTS mod** 实时交互，实现卡牌导入、构筑同步~~
 <!-- * 支持本地数据库缓存与离线浏览 -->
 
 ---

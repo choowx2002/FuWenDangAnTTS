@@ -1,0 +1,5 @@
+{
+  "svelte.enable-ts-plugin": false,
+   "javascript.validate.enable": false,
+  "js/ts.implicitProjectConfig.checkJs": false
+}

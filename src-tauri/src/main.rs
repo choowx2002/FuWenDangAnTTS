@@ -5,7 +5,7 @@
 fn is_dev_mode() -> bool {
     cfg!(debug_assertions)
 }
-use std::io::Read;
+// use std::io::Read;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use tiny_http::{Header, Method, Response, Server};

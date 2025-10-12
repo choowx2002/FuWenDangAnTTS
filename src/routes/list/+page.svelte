@@ -60,7 +60,7 @@
         if (res) {
             mightValues = res.mightLimit;
             powerValues = res.powerLimit;
-            energyValues =res.energyLimit;
+            energyValues = res.energyLimit;
 
             mightLimit = res.mightLimit;
             powerLimit = res.powerLimit;
@@ -90,6 +90,25 @@
         );
         observerInitialized = true;
     }
+
+    const arraysEqual = (a, b) =>
+        Array.isArray(a) &&
+        Array.isArray(b) &&
+        a.length === b.length &&
+        a.every((v, i) => v === b[i]);
+
+    const checkFilterExists = () => {
+        return (
+            (Object.keys(queryOptions).length > 0 &&
+                Object.values(queryOptions).some(
+                    (arr) => Array.isArray(arr) && arr.length > 0,
+                )) ||
+            query.trim() !== "" ||
+            !arraysEqual(powerValues, powerLimit) ||
+            !arraysEqual(energyValues, energyLimit) ||
+            !arraysEqual(mightValues, mightLimit)
+        );
+    };
 
     async function loadCards(reset = false) {
         if (loading) return;
@@ -170,9 +189,9 @@
     function clearAllFilters() {
         queryOptions = {};
         query = "";
-        mightValues = [0, 15];
-        powerValues = [0, 4];
-        energyValues = [0, 13];
+        mightValues = mightLimit;
+        powerValues = powerLimit;
+        energyValues = energyLimit;
         loadCards(true);
     }
 
@@ -204,7 +223,9 @@
     bind:show={showCardModal}
     card={selectedCard}
     imgPath={selectedCardImg}
-    onCancel={() => (showCardModal = false)}
+    onCancel={() => {
+        showCardModal = false;
+    }}
     onConfirm={saveCards}
 />
 
@@ -218,6 +239,7 @@
         type="text"
         placeholder="搜索卡牌..."
         bind:value={query}
+        oninput={(e) => (query = e.target.value.trimStart())}
         onkeydown={(e) => e.key === "Enter" && onSearch(e)}
         style="flex:1;padding:6px 10px;"
     />
@@ -232,7 +254,9 @@
         <option value="return_energy-desc">符能（降序↓）</option>
     </select>
     <button onclick={() => (filterVisible = true)}>筛选</button>
-    <button onclick={clearAllFilters}>清除所有</button>
+    <button disabled={!checkFilterExists()} onclick={clearAllFilters}
+        >清除所有</button
+    >
 </div>
 
 <!-- 筛选弹窗 -->
@@ -409,7 +433,10 @@
             {#if imageUrls[card.card_no]}
                 <img src={imageUrls[card.card_no]} alt={card.card_name} />
             {:else}
-                <div class="placeholder">加载中...</div>
+                <div class="placeholder">
+                    <img src="/favicon.png" alt={card.card_name} />
+                    暂时无图
+                </div>
             {/if}
             <div class="card-name">
                 {card.card_name}{card.sub_title ? " " + card.sub_title : ""}
@@ -586,5 +613,20 @@
     .loading {
         text-align: center;
         padding: 20px;
+    }
+
+    .placeholder {
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        display: flex;
+        width: 100%;
+        aspect-ratio: 5/7;
+        row-gap: 10px;
+    }
+
+    .placeholder img {
+        all: unset;
+        width: 90%;
     }
 </style>

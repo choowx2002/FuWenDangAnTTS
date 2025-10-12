@@ -3,6 +3,7 @@
     import { urlMap } from "$lib/resManager";
     import { parse } from "svelte/compiler";
     import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
+    import { onMount } from "svelte";
 
     function openChildWindow() {
         const child = new WebviewWindow("child-window", {

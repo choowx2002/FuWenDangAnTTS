@@ -295,9 +295,10 @@ export async function searchCards({
       card_name LIKE ? OR
       card_effect LIKE ? OR
       card_no LIKE ? OR
-      sub_title LIKE ?
+      sub_title LIKE ? OR
+      champion_tag LIKE ?
     )`);
-    params.push(`%${query}%`, `%${query}%`, `%${query}%`, `%${query}%`);
+    params.push(`%${query}%`, `%${query}%`, `%${query}%`, `%${query}%`, `%${query}%`);
   }
 
   // 普通字段过滤

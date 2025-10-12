@@ -18,6 +18,7 @@
     "core:window:allow-maximize",
     "core:window:allow-unmaximize",
     "core:webview:allow-create-webview-window",
+    "core:window:allow-set-always-on-top",
     "fs:default",
     {
       "identifier": "fs:scope",

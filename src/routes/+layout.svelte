@@ -12,6 +12,7 @@
     import Popup from "../components/Popup.svelte";
     import Loading from "../components/Loading.svelte";
     import BottomToast from "../components/BottomToast.svelte";
+    import { get } from "svelte/store";
 
     // 当前路径
     $: current = $page.url.pathname;
@@ -19,7 +20,7 @@
     let loading = false;
     let messages = [];
     let updateVersion;
-
+    let isOnTop = false;
     let toastCounter = 0;
 
     const showToast = (text, type = "info") => {
@@ -101,6 +102,12 @@
         await getCurrentWindow().close();
     };
 
+    const toggleOntop = async () => {
+        const res = await getCurrentWindow().isAlwaysOnTop();
+        isOnTop = !res;
+        await getCurrentWindow().setAlwaysOnTop(isOnTop);
+    };
+
     onMount(async () => {
         try {
             console.log("initializing...");
@@ -111,7 +118,7 @@
                 const localVersion = await getVersion("cards");
                 const { needUpdate, lVersion } = isUpdated(
                     latestVersion,
-                    localVersion,
+                    localVersion
                 );
                 if (needUpdate) {
                     updateVersion = lVersion;
@@ -120,6 +127,7 @@
             } else {
                 showToast("当前处于离线模式，跳过更新检查。");
             }
+            isOnTop = await getCurrentWindow().isAlwaysOnTop();
 
             await initSingletonMap();
         } catch (err) {
@@ -135,6 +143,21 @@
     </div>
 
     <div class="win-controls">
+        <button
+            class="ctrl"
+            id="btn-min"
+            title="置顶"
+            type="button"
+            on:click={toggleOntop}
+            aria-label="置顶"
+        >
+            {#if isOnTop}
+                <i class="fa-solid fa-thumbtack"></i>
+            {:else}
+                <i class="fa-solid fa-thumbtack-slash"></i>
+            {/if}
+        </button>
+
         <button
             class="ctrl min"
             id="btn-min"

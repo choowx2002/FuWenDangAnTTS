@@ -1,25 +1,28 @@
 <script>
-	import Popup from "../../components/Popup.svelte";
-	let showDialog = false;
+// @ts-nocheck
 
-	function handleConfirm() {
-		console.log("用户确认更新");
-		showDialog = false;
-	}
+  import { onMount } from "svelte";
+  import { startTTSServer, sendToTTS } from "$lib/ttsClient.js";
 
-	function handleCancel() {
-		console.log("用户取消");
-		showDialog = false;
-	}
+  let logs = [];
+
+  onMount(() => {
+    startTTSServer((msg) => {
+      logs.push("收到TTS回调: " + JSON.stringify(msg));
+    });
+  });
+
+  async function spawnCard() {
+    await sendToTTS({ cmd: "spawn_card" });
+    logs.push("已请求生成卡牌");
+  }
 </script>
 
-<button on:click={() => showDialog = true}>打开更新提示</button>
-
-<Popup
-	bind:show={showDialog}
-	title="提示"
-	message="是否要更新数据？"
-	onConfirm={handleConfirm}
-	onCancel={handleCancel}
-	closeOnBackground={false}
-/>
+<main class="p-4">
+  <button on:click={spawnCard}>生成卡牌</button>
+  <div class="mt-4">
+    {#each logs as l}
+      <div>{l}</div>
+    {/each}
+  </div>
+</main>

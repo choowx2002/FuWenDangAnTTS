@@ -27,7 +27,7 @@
     export let show = false; // 控制显示/隐藏
     export let card = null; // 卡片数据对象
     export let imgPath = null;
-    export let confirmText = "确定";
+    export let confirmText = "添加";
     export let cancelText = "关闭";
     export let onConfirm = () => {};
     export let onCancel = () => {};

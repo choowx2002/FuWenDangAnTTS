@@ -196,7 +196,6 @@
     }
 
     function onSearch(e) {
-        // query = e.target.value;
         loadCards(true);
     }
 
@@ -210,12 +209,11 @@
     let selectedCardImg = null;
     let selectedCard = null;
     async function saveCards() {
-        await fetch("http://127.0.0.1:8010/api/save", {
-            method: "POST",
-            headers: { "Content-Type": "text/plain" },
-            body: selectedCard.card_no,
-        });
-        alert("✅ 保存成功");
+        // await fetch("http://127.0.0.1:8010/api/save", {
+        //     method: "POST",
+        //     headers: { "Content-Type": "text/plain" },
+        //     body: selectedCard.card_no,
+        // });
     }
 </script>
 
@@ -628,5 +626,16 @@
     .placeholder img {
         all: unset;
         width: 90%;
+    }
+
+    @media (max-width: 600px) {
+        .card-grid {
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        }
+
+        .filter-modal {
+            width: 95%;
+            max-width: 500px;
+        }
     }
 </style>

@@ -1,6 +1,33 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 
+export async function detectTTSServer() {    
+    try {
+        // 添加前端超时保护
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('前端超时: 超过10秒')), 10000);
+        });
+        
+        const invokePromise = invoke("check_tts_connections");
+        
+        const result = await Promise.race([invokePromise, timeoutPromise]);
+        
+        return {
+            success: result.send_port.includes("正常") && result.receive_port.includes("正常"),
+            sendPort: result.send_port.includes("正常"),
+            receivePort: result.receive_port.includes("正常"),
+            details: result
+        };
+    } catch (error) {
+        return {
+            success: false,
+            sendPort: false,
+            receivePort: false,
+            details: error.toString()
+        };
+    }
+}
+
 // 启动监听 (39998)
 export async function startTTSServer(onMessage) {
     await invoke("start_tts_listener");

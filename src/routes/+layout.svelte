@@ -13,6 +13,7 @@
     import Loading from "../components/Loading.svelte";
     import BottomToast from "../components/BottomToast.svelte";
     import { get } from "svelte/store";
+    import { detectTTSServer } from "$lib/ttsClient";
 
     // 当前路径
     $: current = $page.url.pathname;
@@ -22,6 +23,8 @@
     let updateVersion;
     let isOnTop = false;
     let toastCounter = 0;
+    let connectionStatus = "未连接";
+    let checkingConnectionStatus = false;
 
     const showToast = (text, type = "info") => {
         toastCounter += 1;
@@ -128,12 +131,34 @@
                 showToast("当前处于离线模式，跳过更新检查。");
             }
             isOnTop = await getCurrentWindow().isAlwaysOnTop();
-
+            await checkAllConnections();
             await initSingletonMap();
         } catch (err) {
             console.error("检查更新失败:", err);
         }
     });
+
+    async function checkAllConnections() {
+        if (checkingConnectionStatus) return;
+        checkingConnectionStatus = true;
+        // 立即更新状态
+        connectionStatus = "连接中";
+
+        try {
+            const result = await detectTTSServer();
+
+            if (result.success) {
+                connectionStatus = "已连接";
+            } else {
+                connectionStatus = "未连接";
+            }
+        } catch (error) {
+            connectionStatus = "未连接";
+        } finally {
+            checkingConnectionStatus = false;
+        }
+
+    }
 </script>
 
 <!-- ======= 标题栏 ======= -->
@@ -235,6 +260,18 @@
             title="gallery"
         >
             <i class="fa-solid fa-folder fa-lg"></i><span>Decks</span>
+        </button>
+
+        <button
+            class="connection-btn"
+            type="button"
+            on:click={checkAllConnections}
+            title="点击刷新"
+        >
+            <span class:isConnected={connectionStatus === "已连接"}>
+                <i class="fa-solid fa-circle"></i>
+            </span>
+            <span>TTS: {connectionStatus}</span>
         </button>
     </nav>
 
@@ -388,6 +425,28 @@
         font-weight: 600;
     }
 
+    button.connection-btn {
+        all: unset;
+        cursor: pointer;
+        margin-top: auto;
+        font-size: 12px;
+        padding: 10px 5px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    button.connection-btn:hover {
+        background: var(--primary);
+        color: var(--background);
+    }
+
+    button.connection-btn i {
+        color: var(--color-error);
+    }
+
+    .isConnected {
+        color: var(--color-success);
+    }
     .content {
         flex-grow: 1;
         overflow-y: auto;

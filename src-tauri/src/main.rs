@@ -1,9 +1,9 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use tauri::Emitter;
 use std::net::TcpStream;
 use std::time::Duration;
+use tauri::Emitter;
 
 #[tauri::command]
 fn is_dev_mode() -> bool {
@@ -28,27 +28,29 @@ fn send_to_tts(message: String) -> Result<String, String> {
 fn check_port(port: u16) -> Result<String, String> {
     println!("开始检查端口 {}...", port);
     let start = std::time::Instant::now();
-    
+
     let address = format!("127.0.0.1:{}", port);
     println!("尝试连接: {}", address);
-    
+
     let result = TcpStream::connect_timeout(
-        &address.parse().map_err(|e| format!("地址解析失败: {}", e))?,
-        Duration::from_secs(3) // 3秒超时
+        &address
+            .parse()
+            .map_err(|e| format!("地址解析失败: {}", e))?,
+        Duration::from_secs(3), // 3秒超时
     );
-    
+
     let duration = start.elapsed();
     println!("端口 {} 检查完成，耗时: {:?}", port, duration);
-    
+
     match result {
         Ok(_) => {
             println!("端口 {} 连接成功", port);
             Ok(format!("端口 {} 连接正常", port))
-        },
+        }
         Err(e) => {
             println!("端口 {} 连接失败: {}", port, e);
             Err(format!("端口 {} 连接失败: {}", port, e))
-        },
+        }
     }
 }
 

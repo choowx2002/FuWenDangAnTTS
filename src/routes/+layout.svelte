@@ -7,13 +7,13 @@
     import { onMount } from "svelte";
     import { getDB, getVersion, upsertCards, upsertVersion } from "$lib/db";
     import { fetchCards, fetchVersion } from "$lib/supabaseClient.js";
-    import { syncDataRefresh } from "$lib/stores";
+    import { syncDataRefresh, syncTTSConnection } from "$lib/stores";
+    import { detectTTSServer } from "$lib/ttsClient";
     import { initSingletonMap, urlMap } from "$lib/resManager";
     import Popup from "../components/Popup.svelte";
     import Loading from "../components/Loading.svelte";
     import BottomToast from "../components/BottomToast.svelte";
     import { get } from "svelte/store";
-    import { detectTTSServer } from "$lib/ttsClient";
 
     // 当前路径
     $: current = $page.url.pathname;
@@ -23,8 +23,13 @@
     let updateVersion;
     let isOnTop = false;
     let toastCounter = 0;
-    let connectionStatus = "未连接";
+    let connectionStatus = {
+        success: false,
+        sendPort: false,
+        receivePort: false,
+    };
     let checkingConnectionStatus = false;
+    let store;
 
     const showToast = (text, type = "info") => {
         toastCounter += 1;
@@ -121,7 +126,7 @@
                 const localVersion = await getVersion("cards");
                 const { needUpdate, lVersion } = isUpdated(
                     latestVersion,
-                    localVersion
+                    localVersion,
                 );
                 if (needUpdate) {
                     updateVersion = lVersion;
@@ -145,19 +150,14 @@
         connectionStatus = "连接中";
 
         try {
-            const result = await detectTTSServer();
-
-            if (result.success) {
-                connectionStatus = "已连接";
-            } else {
-                connectionStatus = "未连接";
-            }
+            connectionStatus = await detectTTSServer();
+            syncTTSConnection.set(connectionStatus.sendPort || connectionStatus.success);
         } catch (error) {
-            connectionStatus = "未连接";
+            connectionStatus.success = false;
+            syncTTSConnection.set(false);
         } finally {
             checkingConnectionStatus = false;
         }
-
     }
 </script>
 
@@ -237,7 +237,7 @@
             class:selected={current === "/"}
             on:click={() => goto("/")}
             type="button"
-            title="home"
+            title="首页"
         >
             <i class="fa-solid fa-home fa-lg"></i><span>Home</span>
         </button>
@@ -247,7 +247,7 @@
             class:selected={current.startsWith("/list")}
             on:click={() => goto("/list")}
             type="button"
-            title="cards"
+            title="卡牌库"
         >
             <i class="fa-solid fa-image fa-lg"></i><span>Cards</span>
         </button>
@@ -257,7 +257,7 @@
             class:selected={current.startsWith("/deck")}
             on:click={() => goto("/deck")}
             type="button"
-            title="gallery"
+            title="卡组构筑"
         >
             <i class="fa-solid fa-folder fa-lg"></i><span>Decks</span>
         </button>
@@ -265,13 +265,56 @@
         <button
             class="connection-btn"
             type="button"
+            class:isConnected={connectionStatus.success ||
+                connectionStatus.sendPort}
             on:click={checkAllConnections}
             title="点击刷新"
         >
-            <span class:isConnected={connectionStatus === "已连接"}>
-                <i class="fa-solid fa-circle"></i>
-            </span>
-            <span>TTS: {connectionStatus}</span>
+            {#if checkingConnectionStatus}
+                <span style="color: var(--text);">
+                    <i class="fa-solid fa-spinner"></i>
+                </span>
+            {:else}
+                <span class="circle-color">
+                    <i class="fa-solid fa-circle"></i>
+                </span>
+            {/if}
+
+            {#if checkingConnectionStatus}
+                <span style="color: var(--text);">TTS: 检查中</span>
+            {:else}
+                <span
+                    >TTS: {connectionStatus.success || connectionStatus.sendPort
+                        ? "已连接"
+                        : "未连接"}</span
+                >
+            {/if}
+            <div
+                class="connection-popup"
+                on:click|stopPropagation
+                role="presentation"
+            >
+                <div>
+                    <span>发送端：</span>
+                    <span>
+                        {#if connectionStatus.sendPort}
+                            <i class="fa-solid fa-check"></i>
+                        {:else}
+                            <i class="fa-solid fa-xmark"></i>
+                        {/if}
+                    </span>
+                </div>
+                <div>
+                    <span>接受端：</span>
+                    <span>
+                        {#if connectionStatus.receivePort}
+                            <i class="fa-solid fa-check"></i>
+                        {:else}
+                            <i class="fa-solid fa-xmark"></i>
+                        {/if}
+                    </span>
+                </div>
+            </div>
         </button>
     </nav>
 
@@ -433,20 +476,43 @@
         padding: 10px 5px;
         width: 100%;
         box-sizing: border-box;
+        position: relative;
+        display: flex;
+        justify-content: space-around;
+        align-items: baseline;
     }
 
-    button.connection-btn:hover {
-        background: var(--primary);
-        color: var(--background);
-    }
-
-    button.connection-btn i {
+    button.connection-btn {
         color: var(--color-error);
+        filter: drop-shadow(0 2px 2px #0000002d);
     }
 
-    .isConnected {
-        color: var(--color-success);
+    button.connection-btn.isConnected {
+        color: var(--color-success) !important;
     }
+
+    .connection-popup {
+        position: absolute;
+        width: 90px;
+        height: 50px;
+        display: none;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        margin-left: 5px;
+        padding: 5px;
+        box-sizing: border-box;
+        background-color: var(--background);
+        border: 0.3px solid var(--muted);
+        left: 0;
+        color: var(--text);
+    }
+
+    button.connection-btn:hover .connection-popup {
+        display: flex;
+        top: -40px;
+    }
+
     .content {
         flex-grow: 1;
         overflow-y: auto;

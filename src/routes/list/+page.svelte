@@ -7,6 +7,8 @@
     import RangeSlider from "svelte-range-slider-pips";
     import { urlMap } from "$lib/resManager";
     import CardModal from "../../components/CardModal.svelte";
+    import { syncTTSConnection } from "$lib/stores";
+    import { sendToTTS } from "$lib/ttsClient";
 
     let filters = {
         series: [],
@@ -52,6 +54,9 @@
     let observerInitialized = false;
     let filterVisible = false;
     let showCardModal = false;
+    let addingMode = false;
+
+    $: currentStatus = $syncTTSConnection;
 
     const selectedFilters = writable({});
 
@@ -208,12 +213,11 @@
 
     let selectedCardImg = null;
     let selectedCard = null;
-    async function saveCards() {
-        // await fetch("http://127.0.0.1:8010/api/save", {
-        //     method: "POST",
-        //     headers: { "Content-Type": "text/plain" },
-        //     body: selectedCard.card_no,
-        // });
+    async function spawnCards() {
+        if (currentStatus) {
+            sendToTTS(selectedCard.card_no);
+            return;
+        }
     }
 </script>
 
@@ -224,7 +228,8 @@
     onCancel={() => {
         showCardModal = false;
     }}
-    onConfirm={saveCards}
+    isConnected={currentStatus}
+    onConfirm={spawnCards}
 />
 
 <!-- 顶部控制栏 -->
@@ -255,6 +260,12 @@
     <button disabled={!checkFilterExists()} onclick={clearAllFilters}
         >清除所有</button
     >
+    {#if currentStatus}
+        <div>
+            <label for="addingMode">添加模式</label>
+            <input type="checkbox" bind:checked={addingMode} id="addingMode" />
+        </div>
+    {/if}
 </div>
 
 <!-- 筛选弹窗 -->
@@ -422,6 +433,10 @@
         <div
             class="card"
             onclick={() => {
+                if (addingMode) {
+                    sendToTTS(card.card_no);
+                    return;
+                }
                 showCardModal = true;
                 selectedCard = card;
                 selectedCardImg = imageUrls[card.card_no];

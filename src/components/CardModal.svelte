@@ -27,6 +27,7 @@
     export let show = false; // 控制显示/隐藏
     export let card = null; // 卡片数据对象
     export let imgPath = null;
+    export let isConnected = false;
     export let confirmText = "添加";
     export let cancelText = "关闭";
     export let onConfirm = () => {};
@@ -285,9 +286,11 @@
                 <button class="cancel-button" on:click={onCancel}
                     >{cancelText}</button
                 >
-                <button class="confirm-button" on:click={onConfirm}
-                    >{confirmText}</button
-                >
+                {#if isConnected}
+                    <button class="confirm-button" on:click={onConfirm}
+                        >{confirmText}</button
+                    >
+                {/if}
             </div>
         </div>
     </div>
@@ -313,6 +316,7 @@
     .card-modal-content {
         background: var(--card-background);
         padding: 24px;
+        padding-bottom: 0;
         border-radius: 12px;
         width: 100%;
         max-width: 500px;
@@ -499,8 +503,9 @@
 
     .popup-actions {
         position: sticky;
-        bottom: 0;
+        bottom: 10px;
         margin-top: 24px;
+        margin-bottom: 24px;
         display: flex;
         justify-content: space-around;
         background-color: var(--card-background);
@@ -519,6 +524,7 @@
 
     .cancel-button {
         background: var(--background);
+        border: 0.3px solid var(--muted);
         color: var(--text);
     }
 

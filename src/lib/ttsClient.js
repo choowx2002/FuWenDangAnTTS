@@ -42,12 +42,16 @@ export async function startTTSServer(onMessage) {
 }
 
 // 发送命令到 TTS (39999)
-export async function sendToTTS(command) {
+export async function sendToTTS(deck) {
+    const list = deck.split(" ");
+    list.forEach(card => {
+        return card.toString().replace("*", "S")+"-1"
+    });
     const msg = {
         "messageID": 2,
         "customMessage": {
             "action": "spawn",
-            "deck": "OGN-298-1 OGN-290-1 OGN-291-1 OGN-301S-3 ARC-001-2 ARC-001-2 ARC-001-2 OGN-003-1 OGN-003-1 OGN-003-1 OGN-006-1 OGN-006-1 OGN-006-1 OGN-012-1 OGN-012-1 OGN-012-1 OGN-030-1 OGN-185-1 OGN-185-1 OGN-185-1 OGN-197a-2 OGN-197a-2 OGN-197a-2 OGN-194-1 OGN-194-1 OGN-194-1 OGN-169-1 OGN-169-1 OGN-029-1 OGN-029-1 OGN-168-1 OGN-168-1 OGN-173-1 OGN-173-1 OGN-173-1 OGN-183-1 OGN-183-1 OGN-183-1 OGN-040-1 OGN-040-1 OGN-040-1 OGN-021-1 OGN-021-1 OGN-021-1 OGN-166a-2 OGN-166a-2 OGN-166a-2 OGN-166a-2 OGN-166a-2 OGN-007a-2 OGN-007a-2 OGN-007a-2 OGN-007a-2 OGN-007a-2 OGN-007a-2 OGN-007a-2"
+            "deck": list.join(" ")
         }
     };
     return await invoke("send_to_tts", {

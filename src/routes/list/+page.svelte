@@ -9,6 +9,7 @@
     import CardModal from "../../components/CardModal.svelte";
     import { syncTTSConnection } from "$lib/stores";
     import { sendToTTS } from "$lib/ttsClient";
+    import BottomToast from "../../components/BottomToast.svelte";
 
     let filters = {
         series: [],
@@ -215,11 +216,19 @@
     let selectedCard = null;
     async function spawnCards() {
         if (currentStatus) {
-            sendToTTS(selectedCard.card_no);
+            sendToTTS(selectedCard.card_no).catch((reason) => {
+                showToast("未连接。请打开并连接到TTS。", "error");
+            });
             return;
         }
     }
+    let message = null;
+    const showToast = (text, type = "info") => {
+        message = { id: Date.now(), text, type };
+    };
 </script>
+
+<BottomToast {message} />
 
 <CardModal
     bind:show={showCardModal}
@@ -434,7 +443,9 @@
             class="card"
             onclick={() => {
                 if (addingMode) {
-                    sendToTTS(card.card_no);
+                    sendToTTS(card.card_no).catch((reason) => {
+                        showToast("未连接。请打开并连接到TTS。", "error");
+                    });
                     return;
                 }
                 showCardModal = true;

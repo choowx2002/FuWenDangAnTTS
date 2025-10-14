@@ -4,6 +4,7 @@
     import { parse } from "svelte/compiler";
     import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
     import { onMount } from "svelte";
+    import BottomToast from "./BottomToast.svelte";
 
     function openChildWindow() {
         const child = new WebviewWindow("child-window", {
@@ -102,9 +103,15 @@
 
         return html;
     }
+
+    let message = null;
+    const showToast = (text, type = "info") => {
+        message = { id: Date.now(), text, type };
+    };
 </script>
 
 {#if show && card}
+    <BottomToast {message} />
     <div
         class="popup-overlay"
         role="dialog"
@@ -307,7 +314,7 @@
         align-items: center;
         justify-content: center;
         background: rgba(0, 0, 0, 0.4);
-        z-index: 9999;
+        z-index: 9998;
         animation: fadeIn 0.15s ease-out;
         padding: 20px;
         box-sizing: border-box;

@@ -19,10 +19,9 @@
     $: current = $page.url.pathname;
     let showSyncDialog = false;
     let loading = false;
-    let messages = [];
+    let message = null;
     let updateVersion;
     let isOnTop = false;
-    let toastCounter = 0;
     let connectionStatus = {
         success: false,
         sendPort: false,
@@ -32,8 +31,7 @@
     let store;
 
     const showToast = (text, type = "info") => {
-        toastCounter += 1;
-        messages = [...messages, { id: "ToastId-" + toastCounter, text, type }];
+         message = { id: Date.now(), text, type};
     };
 
     const handleConfirm = async () => {
@@ -220,7 +218,7 @@
 
 <!-- ======= 主界面内容 ======= -->
 <div class="app">
-    <BottomToast {messages} />
+    <BottomToast {message} />
     <Loading show={loading} imgSrc="/favicon.png" message="请稍候..." />
     <Popup
         bind:show={showSyncDialog}

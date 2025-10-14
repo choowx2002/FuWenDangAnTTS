@@ -1,50 +1,57 @@
 <script>
-// @ts-nocheck
+    // @ts-nocheck
+    import { fly, fade } from "svelte/transition";
+    export let message = null; // { id, text, type }
 
-  import { fly, fade } from 'svelte/transition';
-  export let messages = []; // [{ id, text, type }] type 可选: 'info'|'success'|'error'
+    let timer;
 
-  // 自动消失
-  function removeMessage(id) {
-    messages = messages.filter(m => m.id !== id);
-  }
+    // 显示新消息时自动计时消失
+    $: if (message) {
+        clearTimeout(timer);
+        timer = setTimeout(() => (message = null), 3000);
+    }
 </script>
 
-<div class="toast-container">
-  {#each messages as msg (msg.id)}
+{#if message}
     <div
-      class="toast {msg.type}"
-      in:fly="{{ y: 50, duration: 300 }}"
-      out:fade="{{ duration: 300 }}"
-      on:introend={() => {
-        setTimeout(() => removeMessage(msg.id), 3000);
-      }}
+        class="toast-container"
+        in:fly={{ y: 50, duration: 300 }}
+        out:fade={{ duration: 300 }}
     >
-      {msg.text}
+        <div class="toast {message.type}">
+            {message.text}
+        </div>
     </div>
-  {/each}
-</div>
+{/if}
 
 <style>
-  .toast-container {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    display: flex;
-    flex-direction: column;
-    z-index: 9999;
-    pointer-events: none; /* 不阻塞鼠标事件 */
-  }
+    .toast-container {
+        position: fixed;
+        bottom: 4px;
+        left: 4px;
+        display: flex;
+        justify-content: left;
+        z-index: 9999;
+        pointer-events: none;
+    }
 
-  .toast {
-    color: var(--text);
-    padding: 5px 8px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    pointer-events: all;
-  }
+    .toast {
+        color: var(--text);
+        padding: 5px 10px;
+        border-bottom-left-radius: 6px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        pointer-events: all;
+        background: var(--color-info);
+    }
 
-  .toast.info { background: var(--color-info); }
-  .toast.success { background: var(--color-success); }
-  .toast.error { background: var(--color-error); }
+    .toast.info {
+        background: var(--color-info);
+    }
+    .toast.success {
+        background: var(--color-success);
+    }
+    .toast.error {
+        color: var(--card-background);
+        background: var(--color-error);
+    }
 </style>

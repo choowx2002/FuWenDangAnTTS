@@ -270,7 +270,9 @@
         >清除所有</button
     >
     {#if currentStatus}
-        <div>
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div style="user-select: none;">
             <label for="addingMode">添加模式</label>
             <input type="checkbox" bind:checked={addingMode} id="addingMode" />
         </div>
@@ -615,6 +617,7 @@
     .card {
         overflow: hidden;
         transition: transform 0.2s;
+        user-select: none;
     }
 
     .card:hover {

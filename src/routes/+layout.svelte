@@ -31,7 +31,7 @@
     let store;
 
     const showToast = (text, type = "info") => {
-         message = { id: Date.now(), text, type};
+        message = { id: Date.now(), text, type };
     };
 
     const handleConfirm = async () => {
@@ -124,7 +124,7 @@
                 const localVersion = await getVersion("cards");
                 const { needUpdate, lVersion } = isUpdated(
                     latestVersion,
-                    localVersion,
+                    localVersion
                 );
                 if (needUpdate) {
                     updateVersion = lVersion;
@@ -149,7 +149,9 @@
 
         try {
             connectionStatus = await detectTTSServer();
-            syncTTSConnection.set(connectionStatus.sendPort || connectionStatus.success);
+            syncTTSConnection.set(
+                connectionStatus.sendPort || connectionStatus.success
+            );
         } catch (error) {
             connectionStatus.success = false;
             syncTTSConnection.set(false);
@@ -189,7 +191,7 @@
             on:click={minimizeWindow}
             aria-label="最小化窗口"
         >
-            <i class="fa-solid fa-window-minimize"></i>
+            <i class="fa-solid fa-minus"></i>
         </button>
 
         <button
@@ -200,7 +202,7 @@
             on:click={toggleFullscreen}
             aria-label="切换全屏"
         >
-            <i class="fa-regular fa-window-maximize"></i>
+            <i class="fa-regular fa-square-full"></i>
         </button>
 
         <button
@@ -260,60 +262,63 @@
             <i class="fa-solid fa-folder fa-lg"></i><span>Decks</span>
         </button>
 
-        <button
-            class="connection-btn"
-            type="button"
-            class:isConnected={connectionStatus.success ||
-                connectionStatus.sendPort}
-            on:click={checkAllConnections}
-            title="点击刷新"
-        >
-            {#if checkingConnectionStatus}
-                <span style="color: var(--text);">
-                    <i class="fa-solid fa-spinner"></i>
-                </span>
-            {:else}
-                <span class="circle-color">
-                    <i class="fa-solid fa-circle"></i>
-                </span>
-            {/if}
-
-            {#if checkingConnectionStatus}
-                <span style="color: var(--text);">TTS: 检查中</span>
-            {:else}
-                <span
-                    >TTS: {connectionStatus.success || connectionStatus.sendPort
-                        ? "已连接"
-                        : "未连接"}</span
-                >
-            {/if}
-            <div
-                class="connection-popup"
-                on:click|stopPropagation
-                role="presentation"
+        <div class="bottom-btn-group">
+            <button
+                class="connection-btn"
+                type="button"
+                class:isConnected={connectionStatus.success ||
+                    connectionStatus.sendPort}
+                on:click={checkAllConnections}
+                title="点击刷新"
             >
-                <div>
-                    <span>发送端：</span>
-                    <span>
-                        {#if connectionStatus.sendPort}
-                            <i class="fa-solid fa-check"></i>
-                        {:else}
-                            <i class="fa-solid fa-xmark"></i>
-                        {/if}
+                {#if checkingConnectionStatus}
+                    <span style="color: var(--text);">
+                        <i class="fa-solid fa-spinner"></i>
                     </span>
-                </div>
-                <div>
-                    <span>接受端：</span>
-                    <span>
-                        {#if connectionStatus.receivePort}
-                            <i class="fa-solid fa-check"></i>
-                        {:else}
-                            <i class="fa-solid fa-xmark"></i>
-                        {/if}
+                {:else}
+                    <span class="circle-color">
+                        <i class="fa-solid fa-circle"></i>
                     </span>
+                {/if}
+
+                {#if checkingConnectionStatus}
+                    <span style="color: var(--text);">TTS: 检查中</span>
+                {:else}
+                    <span
+                        >TTS: {connectionStatus.success ||
+                        connectionStatus.sendPort
+                            ? "已连接"
+                            : "未连接"}</span
+                    >
+                {/if}
+                <div
+                    class="connection-popup"
+                    on:click|stopPropagation
+                    role="presentation"
+                >
+                    <div>
+                        <span>发送端：</span>
+                        <span>
+                            {#if connectionStatus.sendPort}
+                                <i class="fa-solid fa-check"></i>
+                            {:else}
+                                <i class="fa-solid fa-xmark"></i>
+                            {/if}
+                        </span>
+                    </div>
+                    <div>
+                        <span>接受端：</span>
+                        <span>
+                            {#if connectionStatus.receivePort}
+                                <i class="fa-solid fa-check"></i>
+                            {:else}
+                                <i class="fa-solid fa-xmark"></i>
+                            {/if}
+                        </span>
+                    </div>
                 </div>
-            </div>
-        </button>
+            </button>
+        </div>
     </nav>
 
     <!-- Main content -->
@@ -466,10 +471,13 @@
         font-weight: 600;
     }
 
+    .bottom-btn-group {
+        margin-top: auto;
+    }
+
     button.connection-btn {
         all: unset;
         cursor: pointer;
-        margin-top: auto;
         font-size: 12px;
         padding: 10px 5px;
         width: 100%;

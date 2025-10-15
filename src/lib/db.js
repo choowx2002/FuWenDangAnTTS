@@ -49,6 +49,33 @@ export async function getDB() {
         front_image_en TEXT
       );
     `);
+
+    await db.execute(`
+      -- 卡组主表
+      CREATE TABLE IF NOT EXISTS decks (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          description TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      -- 卡组卡牌关联表
+      CREATE TABLE IF NOT EXISTS deck_cards (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          deck_id INTEGER NOT NULL,
+          card_no TEXT NOT NULL,
+          zone TEXT NOT NULL,
+          quantity INTEGER NOT NULL DEFAULT 1,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          
+          FOREIGN KEY (deck_id) REFERENCES decks (id) ON DELETE CASCADE,
+          FOREIGN KEY (card_no) REFERENCES cards (card_no) ON DELETE CASCADE,
+          
+          -- 确保同一卡组同一区域不会重复添加同一卡牌
+          UNIQUE(deck_id, card_no, zone)
+      );
+    `);
   }
 
   return db;
@@ -267,7 +294,6 @@ export async function getDiffLimits() {
   };
 }
 
-
 export async function searchCards({
   query = '',
   page = 1,
@@ -373,3 +399,128 @@ export async function searchCards({
   return { rows, total };
 }
 
+// deck sql
+
+// 保存/更新卡组
+export async function saveDeck(deckData) {    
+    return await db.execute('BEGIN TRANSACTION');
+    try {
+        let deckId;
+        
+        if (deckData.id) {
+            // 更新现有卡组
+            await db.execute(
+                'UPDATE decks SET name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                [deckData.name, deckData.id]
+            );
+            deckId = deckData.id;
+            // 删除旧的卡牌记录
+            await db.execute('DELETE FROM deck_cards WHERE deck_id = ?', [deckId]);
+        } else {
+            // 新建卡组
+            const result = await db.execute(
+                'INSERT INTO decks (name, description) VALUES (?, ?)',
+                [deckData.name, deckData.description]
+            );
+            deckId = result.lastInsertId;
+        }
+        
+        // 插入各区域卡牌
+        const zones = ['legend', 'chosen', 'main', 'runes', 'sideboard', 'battlefield'];
+        for (const zone of zones) {
+            const cards = deckData[zone] || [];
+            for (const card of cards) {
+                await db.execute(
+                    `INSERT INTO deck_cards (deck_id, card_no, zone, quantity) 
+                     VALUES (?, ?, ?, ?)`,
+                    [deckId, card.card_no, zone, card.quantity]
+                );
+            }
+        }
+        
+        await db.execute('COMMIT');
+        return deckId;
+        
+    } catch (error) {
+        await db.execute('ROLLBACK');
+        throw error;
+    }
+}
+
+// 加载卡组列表（简要信息）
+// 加载卡组列表（包含英雄信息）
+export async function loadDeckList() {   
+    await getDB(); 
+    // 先获取基础列表
+    const deckList = await db.select(`
+        SELECT d.*, 
+               COUNT(DISTINCT dc.id) as total_cards
+        FROM decks d
+        LEFT JOIN deck_cards dc ON d.id = dc.deck_id
+        GROUP BY d.id
+        ORDER BY d.updated_at DESC
+    `);
+    
+    // 为每个卡组获取英雄信息
+    for (let deck of deckList) {
+        const legend = await db.select(`
+            SELECT c.* 
+            FROM deck_cards dc
+            JOIN cards c ON dc.card_no = c.card_no
+            WHERE dc.deck_id = ? AND dc.zone = 'legend'
+            LIMIT 1
+        `, [deck.id]);
+        
+        deck.legend = legend[0] || null;
+        deck.legend_card_no = deck.legend?.card_no || null;
+        deck.legend_name = deck.legend?.card_name || '无传奇';
+        deck.legend_colors = deck.legend?.card_color_list || null;
+    }
+    
+    return deckList;
+}
+
+// 加载完整卡组数据
+export async function loadDeck(deckId) {    
+    const [deck] = await db.select(
+        'SELECT * FROM decks WHERE id = ?',
+        [deckId]
+    );
+    
+    if (!deck) return null;
+    
+    const deckCards = await db.select(`
+        SELECT dc.*, c.* 
+        FROM deck_cards dc
+        JOIN cards c ON dc.card_no = c.card_no
+        WHERE dc.deck_id = ?
+        ORDER BY dc.zone
+    `, [deckId]);
+    
+    // 按区域组织卡牌数据
+    const zones = {};
+    const zoneTypes = ['legend', 'chosen', 'main', 'runes', 'sideboard', 'battlefield'];
+    
+    for (const zone of zoneTypes) {
+        zones[zone] = [];
+    }
+    
+    for (const card of deckCards) {
+        if (zones[card.zone]) {
+            zones[card.zone].push({
+                ...card,
+                quantity: card.quantity
+            });
+        }
+    }
+    
+    return {
+        ...deck,
+        ...zones
+    };
+}
+
+// 删除卡组
+export async function deleteDeck(deckId) {
+    await db.execute('DELETE FROM decks WHERE id = ?', [deckId]);
+}

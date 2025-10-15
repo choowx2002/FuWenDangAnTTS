@@ -30,8 +30,15 @@
     import { onMount } from "svelte";
     import { startTTSServer, sendToTTS } from "$lib/ttsClient.js";
     import { loadDeckList } from "$lib/db";
+    import { loadExternalImage } from "$lib/fs";
+    import { urlMap } from "$lib/resManager";
+    import { goto } from "$app/navigation";
 
     let decks = [];
+
+    $: if (decks?.length > 0) {
+        loadAllImages(decks);
+    }
     let logs = [];
 
     const fakeData = [
@@ -41,37 +48,37 @@
             description: "快速进攻卡组",
             created_at: "2024-01-15T10:30:00.000Z",
             updated_at: "2024-01-15T14:20:00.000Z",
-            total_cards: 64,
+            total_cards: 52,
             legend: {
-                card_no: "01DE001",
-                card_name: "盖伦",
-                card_color_list: "DE0000",
+                card_no: "OGS-023",
+                card_name: "德玛西亚之力",
+                card_color_list: ["orange", "yellow"],
                 front_image_en: "/images/garen.jpg",
                 power: 5,
-                energy: 5
+                energy: 5,
             },
-            legend_card_no: "01DE001",
-            legend_name: "盖伦",
-            legend_colors: "DE0000"
+            legend_card_no: "OGS-023",
+            legend_name: "德玛西亚之力",
+            legend_colors: ["orange", "yellow"],
         },
         {
             id: 2,
-            name: "暗影岛控制",
+            name: "626 Jinx",
             description: "后期控制卡组",
             created_at: "2024-01-14T09:15:00.000Z",
             updated_at: "2024-01-14T16:45:00.000Z",
             total_cards: 58,
             legend: {
-                card_no: "01SI003",
-                card_name: "赫卡里姆",
+                card_no: "OGN-301",
+                card_name: "暴走萝莉",
                 card_color_list: "SI0000",
                 front_image_en: "/images/hecarim.jpg",
                 power: 4,
-                energy: 6
+                energy: 6,
             },
-            legend_card_no: "01SI003",
-            legend_name: "赫卡里姆", 
-            legend_colors: "SI0000"
+            legend_card_no: "OGN-301",
+            legend_name: "暴走萝莉",
+            legend_colors: ["red", "purple"],
         },
         {
             id: 3,
@@ -81,16 +88,16 @@
             updated_at: "2024-01-16T11:00:00.000Z",
             total_cards: 45,
             legend: {
-                card_no: "01IO007",
+                card_no: "OGN-305*",
                 card_name: "亚索",
                 card_color_list: "IO0000",
                 front_image_en: "/images/yasuo.jpg",
                 power: 4,
-                energy: 4
+                energy: 4,
             },
-            legend_card_no: "01IO007",
+            legend_card_no: "OGN-305*",
             legend_name: "亚索",
-            legend_colors: "IO0000"
+            legend_colors: ["green", "purple"],
         },
         {
             id: 4,
@@ -102,7 +109,7 @@
             legend: null,
             legend_card_no: null,
             legend_name: "无传奇",
-            legend_colors: null
+            legend_colors: [],
         },
         {
             id: 5,
@@ -112,23 +119,39 @@
             updated_at: "2024-01-12T15:40:00.000Z",
             total_cards: 62,
             legend: {
-                card_no: "01NX002",
+                card_no: "OGN-302",
                 card_name: "德莱厄斯",
-                card_color_list: "NX0000", 
+                card_color_list: "NX0000",
                 front_image_en: "/images/darius.jpg",
                 power: 6,
-                energy: 6
+                energy: 6,
             },
-            legend_card_no: "01NX002",
+            legend_card_no: "OGN-302",
             legend_name: "德莱厄斯",
-            legend_colors: "NX0000"
-        }
+            legend_colors: ["red", "yellow"],
+        },
     ];
+
+    let cardImages = {};
+
+    async function loadAllImages(list) {
+        cardImages = {}; // 清空旧数据
+        for (const card of list) {
+            if (!card.legend_card_no) continue;
+            try {
+                cardImages[card.legend_card_no] = await loadExternalImage(
+                    `${card.legend_card_no.replace("*", "s")}.png`,
+                );
+            } catch (e) {
+                console.warn(`找不到图片 ${card.legend_card_no}`, e);
+                cardImages[card.legend_card_no] = null;
+            }
+        }
+    }
 
     onMount(async () => {
         decks = await loadDeckList();
         decks = fakeData;
-        console.log("decks", decks);
         // startTTSServer((msg) => {
         //     logs.push("收到TTS回调: " + JSON.stringify(msg));
         // });
@@ -156,25 +179,39 @@
         <div class="card-grid">
             {#each decks as deck}
                 <!-- show deck info -->
-                <div class="deck-card">
+                <div class="deck-card" role="presentation" on:click={() => goto(`/deckDetails?deckId=${deck.id}`)}>
                     <!-- 英雄头像 -->
-                    {#if deck.legend_card_no}
-                        <!-- <img
-                            src={deck.legend_image}
-                            alt={deck.legend_name}
+                    {#if cardImages[deck.legend_card_no]}
+                        <div
                             class="deck-hero"
-                        /> -->
+                            style={`background-image: url(${cardImages[deck.legend_card_no]});`}
+                        ></div>
                     {:else}
                         <div class="deck-hero placeholder">?</div>
                     {/if}
 
                     <!-- 卡组信息 -->
                     <div class="deck-info">
-                        <div class="deck-name">{deck.name}</div>
-                        <div class="deck-hero-name">{deck.legend_name}</div>
+                        <div class="deck-name">
+                            {deck.name}
+                            {#each deck.legend_colors as color}
+                                {#if urlMap.get(color)?.url}
+                                    <img
+                                        src={urlMap.get(color).url}
+                                        alt={color}
+                                        width="24"
+                                        height="24"
+                                    />
+                                {/if}
+                            {/each}
+                        </div>
+                        <div class="deck-hero-name">
+                            {deck.legend_name}
+                        </div>
+
                         <div class="deck-stats">
                             {deck.total_cards} 张卡 • {new Date(
-                                deck.updated_at
+                                deck.updated_at,
                             ).toLocaleDateString()}
                         </div>
                     </div>
@@ -219,16 +256,16 @@
 
     .card-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
         gap: 16px;
         padding: 16px;
     }
 
     .deck-card {
-        background: white;
+        background: var(--card-background);
         border-radius: 12px;
         padding: 16px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         display: flex;
         align-items: center;
         gap: 12px;
@@ -240,23 +277,31 @@
 
     .deck-card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
     }
 
     .deck-hero {
-        width: 60px;
-        height: 60px;
+        width: 100px;
+        height: 100px;
         border-radius: 50%;
-        object-fit: cover;
+        background-size: 100%;
         border: 2px solid #e5e7eb;
+        background-repeat: no-repeat;
+        background-position: top;
+        image-rendering: crisp-edges;
+        transition: background-size 0.3s ease-in-out;
+    }
+
+    .deck-card:hover .deck-hero {
+        background-size: 110%;
     }
 
     .deck-hero.placeholder {
-        background: #f3f4f6;
+        background: var(--background);
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #9ca3af;
+        color: var(--secondary-text);
         font-size: 20px;
         font-weight: bold;
     }
@@ -266,27 +311,29 @@
     }
 
     .deck-name {
+        display: flex;
+        align-items: center;
         font-size: 16px;
         font-weight: 600;
-        color: #1f2937;
+        color: var(--text);
         margin-bottom: 4px;
     }
 
     .deck-hero-name {
         font-size: 14px;
-        color: #6b7280;
+        color: var(--secondary-text);
         margin-bottom: 4px;
     }
 
     .deck-stats {
         font-size: 12px;
-        color: #9ca3af;
+        color: var(--secondary-text);
     }
 
     .no-deck-content {
         text-align: center;
         padding: 60px 20px;
-        color: #6b7280;
+        color: var(--secondary-text);
         font-size: 16px;
     }
 </style>

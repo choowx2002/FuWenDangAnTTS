@@ -626,7 +626,7 @@
 
     .card img {
         border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
         width: 100%;
         object-fit: contain;
     }
@@ -635,6 +635,7 @@
         padding: 3px 0;
         font-weight: bold;
         text-align: center;
+        filter: drop-shadow(0 2px 2px #0000002d);
     }
 
     .loading {
@@ -657,7 +658,7 @@
         width: 90%;
     }
 
-    @media (max-width: 600px) {
+    @media (max-width: 650px) {
         .card-grid {
             grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
         }

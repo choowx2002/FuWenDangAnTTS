@@ -402,57 +402,57 @@ export async function searchCards({
 // deck sql
 
 // 保存/更新卡组
-export async function saveDeck(deckData) {    
-    return await db.execute('BEGIN TRANSACTION');
-    try {
-        let deckId;
-        
-        if (deckData.id) {
-            // 更新现有卡组
-            await db.execute(
-                'UPDATE decks SET name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-                [deckData.name, deckData.id]
-            );
-            deckId = deckData.id;
-            // 删除旧的卡牌记录
-            await db.execute('DELETE FROM deck_cards WHERE deck_id = ?', [deckId]);
-        } else {
-            // 新建卡组
-            const result = await db.execute(
-                'INSERT INTO decks (name, description) VALUES (?, ?)',
-                [deckData.name, deckData.description]
-            );
-            deckId = result.lastInsertId;
-        }
-        
-        // 插入各区域卡牌
-        const zones = ['legend', 'chosen', 'main', 'runes', 'sideboard', 'battlefield'];
-        for (const zone of zones) {
-            const cards = deckData[zone] || [];
-            for (const card of cards) {
-                await db.execute(
-                    `INSERT INTO deck_cards (deck_id, card_no, zone, quantity) 
-                     VALUES (?, ?, ?, ?)`,
-                    [deckId, card.card_no, zone, card.quantity]
-                );
-            }
-        }
-        
-        await db.execute('COMMIT');
-        return deckId;
-        
-    } catch (error) {
-        await db.execute('ROLLBACK');
-        throw error;
+export async function saveDeck(deckData) {
+  return await db.execute('BEGIN TRANSACTION');
+  try {
+    let deckId;
+
+    if (deckData.id) {
+      // 更新现有卡组
+      await db.execute(
+        'UPDATE decks SET name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        [deckData.name, deckData.id]
+      );
+      deckId = deckData.id;
+      // 删除旧的卡牌记录
+      await db.execute('DELETE FROM deck_cards WHERE deck_id = ?', [deckId]);
+    } else {
+      // 新建卡组
+      const result = await db.execute(
+        'INSERT INTO decks (name, description) VALUES (?, ?)',
+        [deckData.name, deckData.description]
+      );
+      deckId = result.lastInsertId;
     }
+
+    // 插入各区域卡牌
+    const zones = ['legend', 'chosen', 'main', 'runes', 'sideboard', 'battlefield'];
+    for (const zone of zones) {
+      const cards = deckData[zone] || [];
+      for (const card of cards) {
+        await db.execute(
+          `INSERT INTO deck_cards (deck_id, card_no, zone, quantity) 
+                     VALUES (?, ?, ?, ?)`,
+          [deckId, card.card_no, zone, card.quantity]
+        );
+      }
+    }
+
+    await db.execute('COMMIT');
+    return deckId;
+
+  } catch (error) {
+    await db.execute('ROLLBACK');
+    throw error;
+  }
 }
 
 // 加载卡组列表（简要信息）
 // 加载卡组列表（包含英雄信息）
-export async function loadDeckList() {   
-    await getDB(); 
-    // 先获取基础列表
-    const deckList = await db.select(`
+export async function loadDeckList() {
+  await getDB();
+  // 先获取基础列表
+  const deckList = await db.select(`
         SELECT d.*, 
                COUNT(DISTINCT dc.id) as total_cards
         FROM decks d
@@ -460,67 +460,67 @@ export async function loadDeckList() {
         GROUP BY d.id
         ORDER BY d.updated_at DESC
     `);
-    
-    // 为每个卡组获取英雄信息
-    for (let deck of deckList) {
-        const legend = await db.select(`
+
+  // 为每个卡组获取英雄信息
+  for (let deck of deckList) {
+    const legend = await db.select(`
             SELECT c.* 
             FROM deck_cards dc
             JOIN cards c ON dc.card_no = c.card_no
             WHERE dc.deck_id = ? AND dc.zone = 'legend'
             LIMIT 1
         `, [deck.id]);
-        
-        deck.legend = legend[0] || null;
-        deck.legend_card_no = deck.legend?.card_no || null;
-        deck.legend_name = deck.legend?.card_name || '无传奇';
-        deck.legend_colors = deck.legend?.card_color_list || null;
-    }
-    
-    return deckList;
+
+    deck.legend = legend[0] || null;
+    deck.legend_card_no = deck.legend?.card_no || null;
+    deck.legend_name = deck.legend?.card_name || '无传奇';
+    deck.legend_colors = JSON.parse(deck.legend?.card_color_list || []);
+  }
+
+  return deckList;
 }
 
 // 加载完整卡组数据
-export async function loadDeck(deckId) {    
-    const [deck] = await db.select(
-        'SELECT * FROM decks WHERE id = ?',
-        [deckId]
-    );
-    
-    if (!deck) return null;
-    
-    const deckCards = await db.select(`
+export async function loadDeck(deckId) {
+  const [deck] = await db.select(
+    'SELECT * FROM decks WHERE id = ?',
+    [deckId]
+  );
+
+  if (!deck) return null;
+
+  const deckCards = await db.select(`
         SELECT dc.*, c.* 
         FROM deck_cards dc
         JOIN cards c ON dc.card_no = c.card_no
         WHERE dc.deck_id = ?
         ORDER BY dc.zone
     `, [deckId]);
-    
-    // 按区域组织卡牌数据
-    const zones = {};
-    const zoneTypes = ['legend', 'chosen', 'main', 'runes', 'sideboard', 'battlefield'];
-    
-    for (const zone of zoneTypes) {
-        zones[zone] = [];
+
+  // 按区域组织卡牌数据
+  const zones = {};
+  const zoneTypes = ['legend', 'chosen', 'main', 'runes', 'sideboard', 'battlefield'];
+
+  for (const zone of zoneTypes) {
+    zones[zone] = [];
+  }
+
+  for (const card of deckCards) {
+    if (zones[card.zone]) {
+      zones[card.zone].push({
+        ...card,
+        quantity: card.quantity
+      });
     }
-    
-    for (const card of deckCards) {
-        if (zones[card.zone]) {
-            zones[card.zone].push({
-                ...card,
-                quantity: card.quantity
-            });
-        }
-    }
-    
-    return {
-        ...deck,
-        ...zones
-    };
+  }
+
+  return {
+    ...deck,
+    ...zones
+  };
 }
 
 // 删除卡组
 export async function deleteDeck(deckId) {
-    await db.execute('DELETE FROM decks WHERE id = ?', [deckId]);
+  await db.execute('DELETE FROM decks WHERE id = ?', [deckId]);
 }

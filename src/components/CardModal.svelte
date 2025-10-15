@@ -535,17 +535,14 @@
         color: var(--text);
     }
 
-    .cancel-button:hover {
-        background: #e0e0e0;
-    }
-
     .confirm-button {
         background: var(--primary, #6da9a8);
-        color: var(--background);
+        color: var(--card-background);
     }
 
+    .cancel-button:hover,
     .confirm-button:hover {
-        background: var(--accent, #85c1c0);
+         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
 
     @keyframes fadeIn {

@@ -116,6 +116,7 @@
 
     onMount(async () => {
         try {
+            await initSingletonMap();
             console.log("initializing...");
             const db = await getDB();
 
@@ -124,7 +125,7 @@
                 const localVersion = await getVersion("cards");
                 const { needUpdate, lVersion } = isUpdated(
                     latestVersion,
-                    localVersion
+                    localVersion,
                 );
                 if (needUpdate) {
                     updateVersion = lVersion;
@@ -135,7 +136,6 @@
             }
             isOnTop = await getCurrentWindow().isAlwaysOnTop();
             await checkAllConnections();
-            await initSingletonMap();
         } catch (err) {
             console.error("检查更新失败:", err);
         }
@@ -150,7 +150,7 @@
         try {
             connectionStatus = await detectTTSServer();
             syncTTSConnection.set(
-                connectionStatus.sendPort || connectionStatus.success
+                connectionStatus.sendPort || connectionStatus.success,
             );
         } catch (error) {
             connectionStatus.success = false;
@@ -332,8 +332,8 @@
     :root {
         --text: #0e1515;
         --secondary-text: #7f8c8d;
-        --background: #f6f9f9;
-        --card-background: #ffffff;
+        --background: #ced8d5;
+        --card-background: #e8ecec;
         --primary: #6da9a8;
         --secondary: #a3cdcc;
         --accent: #85c1c0;
@@ -433,7 +433,7 @@
     .sidebar {
         width: 100px;
         background: var(--background);
-        /* border-right: 1px solid var(--secondary-text); */
+        border-right: 1px solid var(--secondary-text);
         box-shadow: 0 0 2px var(--secondary-text);
         display: flex;
         flex-direction: column;
@@ -457,12 +457,12 @@
 
     button:hover {
         background: var(--primary);
-        color: var(--background);
+        color: var(--card-background);
     }
 
     button.selected {
         background: var(--primary);
-        color: var(--background);
+        color: var(--card-background);
     }
 
     button.nav-btn span {

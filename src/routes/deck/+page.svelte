@@ -149,6 +149,10 @@
         }
     }
 
+    const openBuilder = () => {
+        goto("/deckBuilder");
+    }
+
     onMount(async () => {
         decks = await loadDeckList();
         decks = fakeData;
@@ -157,10 +161,10 @@
         // });
     });
 
-    async function spawnCard() {
-        await sendToTTS({ cmd: "spawn_card" });
-        logs.push("已请求生成卡牌");
-    }
+    // async function spawnCard() {
+    //     await sendToTTS({ cmd: "spawn_card" });
+    //     logs.push("已请求生成卡牌");
+    // }
 </script>
 
 <main>
@@ -170,7 +174,7 @@
             placeholder="搜索构筑..."
             style="flex:1;padding:6px 10px;"
         />
-        <button class="add-deck-btn"> <div>添加卡组</div></button>
+        <button class="add-deck-btn" on:click={openBuilder} > <div>添加卡组</div></button>
     </div>
 
     {#if !decks.length}

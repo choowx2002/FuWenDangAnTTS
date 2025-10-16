@@ -253,7 +253,8 @@
         bind:value={query}
         oninput={(e) => (query = e.target.value.trimStart())}
         onkeydown={(e) => e.key === "Enter" && onSearch(e)}
-        style="flex:1;padding:6px 10px;"
+        style="flex:1;padding:6px 10px; border-radius: 5px;
+        border: 1px solid var(--muted);"
     />
     <select onchange={onSortChange}>
         <option value="card_no-asc">编号（升序↑）</option>
@@ -266,9 +267,9 @@
         <option value="return_energy-desc">符能（降序↓）</option>
     </select>
     <button onclick={() => (filterVisible = true)}>筛选</button>
-    <button disabled={!checkFilterExists()} onclick={clearAllFilters}
-        >清除所有</button
-    >
+    {#if checkFilterExists()}
+        <button onclick={clearAllFilters}>重置</button>
+    {/if}
     {#if currentStatus}
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -605,6 +606,13 @@
 
     .choice.active:has(img) img {
         filter: brightness(100);
+    }
+
+    select {
+        height: 29px;
+        padding: 5px;
+        border-radius: 5px;
+        border: 1px solid var(--muted);
     }
 
     .card-grid {

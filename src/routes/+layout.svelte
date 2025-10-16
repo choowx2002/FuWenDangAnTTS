@@ -230,96 +230,99 @@
         onCancel={handleCancel}
         closeOnBackground={false}
     />
-    <!-- Sidebar -->
-    <nav class="sidebar">
-        <button
-            class="nav-btn"
-            class:selected={current === "/"}
-            on:click={() => goto("/")}
-            type="button"
-            title="首页"
-        >
-            <i class="fa-solid fa-home fa-lg"></i><span>Home</span>
-        </button>
 
-        <button
-            class="nav-btn"
-            class:selected={current.startsWith("/list")}
-            on:click={() => goto("/list")}
-            type="button"
-            title="卡牌库"
-        >
-            <i class="fa-solid fa-image fa-lg"></i><span>Cards</span>
-        </button>
-
-        <button
-            class="nav-btn"
-            class:selected={current.startsWith("/deck")}
-            on:click={() => goto("/deck")}
-            type="button"
-            title="卡组构筑"
-        >
-            <i class="fa-solid fa-folder fa-lg"></i><span>Decks</span>
-        </button>
-
-        <div class="bottom-btn-group">
+    {#if current !== "/deckBuilder"}
+        <!-- Sidebar -->
+        <nav class="sidebar">
             <button
-                class="connection-btn"
+                class="nav-btn"
+                class:selected={current === "/"}
+                on:click={() => goto("/")}
                 type="button"
-                class:isConnected={connectionStatus.success ||
-                    connectionStatus.sendPort}
-                on:click={checkAllConnections}
-                title="点击刷新"
+                title="首页"
             >
-                {#if checkingConnectionStatus}
-                    <span style="color: var(--text);">
-                        <i class="fa-solid fa-spinner"></i>
-                    </span>
-                {:else}
-                    <span class="circle-color">
-                        <i class="fa-solid fa-circle"></i>
-                    </span>
-                {/if}
-
-                {#if checkingConnectionStatus}
-                    <span style="color: var(--text);">TTS: 检查中</span>
-                {:else}
-                    <span
-                        >TTS: {connectionStatus.success ||
-                        connectionStatus.sendPort
-                            ? "已连接"
-                            : "未连接"}</span
-                    >
-                {/if}
-                <div
-                    class="connection-popup"
-                    on:click|stopPropagation
-                    role="presentation"
-                >
-                    <div>
-                        <span>发送端：</span>
-                        <span>
-                            {#if connectionStatus.sendPort}
-                                <i class="fa-solid fa-check"></i>
-                            {:else}
-                                <i class="fa-solid fa-xmark"></i>
-                            {/if}
-                        </span>
-                    </div>
-                    <div>
-                        <span>接受端：</span>
-                        <span>
-                            {#if connectionStatus.receivePort}
-                                <i class="fa-solid fa-check"></i>
-                            {:else}
-                                <i class="fa-solid fa-xmark"></i>
-                            {/if}
-                        </span>
-                    </div>
-                </div>
+                <i class="fa-solid fa-home fa-lg"></i><span>Home</span>
             </button>
-        </div>
-    </nav>
+
+            <button
+                class="nav-btn"
+                class:selected={current.startsWith("/list")}
+                on:click={() => goto("/list")}
+                type="button"
+                title="卡牌库"
+            >
+                <i class="fa-solid fa-image fa-lg"></i><span>Cards</span>
+            </button>
+
+            <button
+                class="nav-btn"
+                class:selected={current.startsWith("/deck")}
+                on:click={() => goto("/deck")}
+                type="button"
+                title="卡组构筑"
+            >
+                <i class="fa-solid fa-folder fa-lg"></i><span>Decks</span>
+            </button>
+
+            <div class="bottom-btn-group">
+                <button
+                    class="connection-btn"
+                    type="button"
+                    class:isConnected={connectionStatus.success ||
+                        connectionStatus.sendPort}
+                    on:click={checkAllConnections}
+                    title="点击刷新"
+                >
+                    {#if checkingConnectionStatus}
+                        <span style="color: var(--text);">
+                            <i class="fa-solid fa-spinner"></i>
+                        </span>
+                    {:else}
+                        <span class="circle-color">
+                            <i class="fa-solid fa-circle"></i>
+                        </span>
+                    {/if}
+
+                    {#if checkingConnectionStatus}
+                        <span style="color: var(--text);">TTS: 检查中</span>
+                    {:else}
+                        <span
+                            >TTS: {connectionStatus.success ||
+                            connectionStatus.sendPort
+                                ? "已连接"
+                                : "未连接"}</span
+                        >
+                    {/if}
+                    <div
+                        class="connection-popup"
+                        on:click|stopPropagation
+                        role="presentation"
+                    >
+                        <div>
+                            <span>发送端：</span>
+                            <span>
+                                {#if connectionStatus.sendPort}
+                                    <i class="fa-solid fa-check"></i>
+                                {:else}
+                                    <i class="fa-solid fa-xmark"></i>
+                                {/if}
+                            </span>
+                        </div>
+                        <div>
+                            <span>接受端：</span>
+                            <span>
+                                {#if connectionStatus.receivePort}
+                                    <i class="fa-solid fa-check"></i>
+                                {:else}
+                                    <i class="fa-solid fa-xmark"></i>
+                                {/if}
+                            </span>
+                        </div>
+                    </div>
+                </button>
+            </div>
+        </nav>
+    {/if}
 
     <!-- Main content -->
     <main class="content">

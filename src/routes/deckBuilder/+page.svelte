@@ -18,8 +18,6 @@
         sideboard: [],
     };
 
-    let cardImage;
-
     let filters = {
         series: [],
         type: [],
@@ -157,7 +155,7 @@
         if (reset) {
             page = 1;
             cards = [];
-            imageUrls = {};
+            // imageUrls = {};
             hasMore = true;
         }
 
@@ -211,17 +209,211 @@
         }
     }
 
-    const addToDeck = () => {
-        console.log(selectedCard);
-        console.log(selectedCardImg);
+    const isSignCardAvailable = (championTag) => {
+        if (!deck.legend.length) return true;
+        const legendTag = deck.legend[0].data.champion_tag;
+        return championTag === legendTag;
+    };
+    const normalize = (v) => (v ?? "").trim();
+    const signatureTypes = new Set(["专属单位", "专属法术", "专属装备"]);
+    const addToDeck = (card) => {
+        switch (card.card_category_name) {
+            case "传奇": {
+                const updated = [...deck.legend];
+                const cardData = {
+                    card_no: card.card_no,
+                    zone: "legend",
+                    quantity: 1,
+                    img: imageUrls[card.card_no],
+                    data: card,
+                };
+                deck = { ...deck, legend: [cardData] };
+                break;
+            }
+
+            case "专属装备":
+            case "专属单位":
+            case "专属法术": {
+                if (
+                    deck.main.reduce((sum, c) => sum + (c.quantity || 1), 0) >=
+                    40
+                ) {
+                    console.log("主卡堆满了");
+                    return;
+                }
+
+                const signatures = deck.main.filter((card) =>
+                    signatureTypes.has(card.data.card_category_name),
+                );
+
+                // 检查总体数量
+                if (
+                    signatures.reduce((sum, c) => sum + (c.quantity || 1), 0) >=
+                    3
+                ) {
+                    console.log("专属满了");
+                    return;
+                }
+
+                // 检查传奇适配度
+                if (!isSignCardAvailable(card.champion_tag)) return;
+
+                const existingIndex = deck.main.findIndex(
+                    (c) => c.card_no === card.card_no,
+                );
+
+                if (existingIndex !== -1) {
+                    const updated = [...deck.main];
+                    updated[existingIndex] = {
+                        ...updated[existingIndex],
+                        quantity: updated[existingIndex].quantity + 1,
+                    };
+                    deck = { ...deck, main: updated };
+                } else {
+                    const cardData = {
+                        card_no: card.card_no,
+                        zone: "main",
+                        quantity: 1,
+                        img: imageUrls[card.card_no],
+                        data: card,
+                    };
+                    deck = {
+                        ...deck,
+                        main: [...deck.main, cardData],
+                    };
+                }
+
+                break;
+            }
+
+            case "法术":
+            case "装备":
+            case "单位":
+            case "英雄单位": {
+                if (
+                    deck.main.reduce((sum, c) => sum + (c.quantity || 1), 0) >=
+                    40
+                ) {
+                    console.log("主卡堆满了");
+                    return;
+                }
+                const existingIndex = deck.main.findIndex(
+                    (c) => c.card_no === card.card_no,
+                );
+
+                const sameNameCards = deck.main.filter(
+                    (c) =>
+                        normalize(card.card_name) ===
+                            normalize(c.data.card_name) &&
+                        normalize(card.sub_title) ===
+                            normalize(c.data.sub_title),
+                );
+
+                const sameCardCount = sameNameCards.reduce(
+                    (sum, c) => sum + (c.quantity || 1),
+                    0,
+                );
+
+                if (sameCardCount >= 3) return;
+
+                if (existingIndex !== -1) {
+                    const updated = [...deck.main];
+                    updated[existingIndex] = {
+                        ...updated[existingIndex],
+                        quantity: updated[existingIndex].quantity + 1,
+                    };
+                    deck = { ...deck, main: updated };
+                } else {
+                    const cardData = {
+                        card_no: card.card_no,
+                        zone: "main",
+                        quantity: 1,
+                        img: imageUrls[card.card_no],
+                        data: card,
+                    };
+                    deck = {
+                        ...deck,
+                        main: [...deck.main, cardData],
+                    };
+                }
+                break;
+            }
+
+            case "符文": {
+                if (
+                    deck.runes.reduce((sum, c) => sum + (c.quantity || 1), 0) >=
+                    12
+                ) {
+                    console.log("符文满了");
+                    return;
+                }
+                const existingIndex = deck.runes.findIndex(
+                    (c) => c.card_no === card.card_no,
+                );
+
+                if (existingIndex !== -1) {
+                    const updated = [...deck.runes];
+                    updated[existingIndex] = {
+                        ...updated[existingIndex],
+                        quantity: updated[existingIndex].quantity + 1,
+                    };
+                    deck = { ...deck, runes: updated };
+                } else {
+                    const cardData = {
+                        card_no: card.card_no,
+                        zone: "runes",
+                        quantity: 1,
+                        img: imageUrls[card.card_no],
+                        data: card,
+                    };
+                    deck = {
+                        ...deck,
+                        runes: [...deck.runes, cardData],
+                    };
+                }
+                break;
+            }
+
+            case "战场": {
+                if (
+                    deck.battlefield.reduce(
+                        (sum, c) => sum + (c.quantity || 1),
+                        0,
+                    ) >= 3
+                ) {
+                    console.log("战场满了");
+                    return;
+                }
+                const existingIndex = deck.battlefield.findIndex(
+                    (c) => c.card_no === card.card_no,
+                );
+
+                if (existingIndex === -1) {
+                    const cardData = {
+                        card_no: card.card_no,
+                        zone: "battlefield",
+                        quantity: 1,
+                        img: imageUrls[card.card_no],
+                        data: card,
+                    };
+                    deck = {
+                        ...deck,
+                        battlefield: [...deck.battlefield, cardData],
+                    };
+                }
+                break;
+            }
+
+            default:
+                break;
+        }
     };
 
     onMount(async () => {
-        cardImage = await loadExternalImage("OGN-038.png");
         filters = await getDistinctFilters();
         await updateRange();
         initObserver();
-        await loadCards();
+        await loadCards(true);
     });
 
     const zoneNames = {
@@ -241,6 +433,68 @@
         battlefield: 3,
         sideboard: 8,
     };
+
+    const zoneQuery = {
+        legend: { type: ["传奇"] },
+        chosen: { type: ["英雄单位"] },
+        main: {
+            type: [
+                "专属单位",
+                "专属法术",
+                "专属装备",
+                "单位",
+                "法术",
+                "英雄单位",
+                "装备",
+            ],
+        },
+        runes: { type: ["符文"] },
+        battlefield: { type: ["战场"] },
+        sideboard: {
+            type: [
+                "专属单位",
+                "专属法术",
+                "专属装备",
+                "单位",
+                "法术",
+                "英雄单位",
+                "装备",
+            ],
+        },
+    };
+
+    const filterWithZone = (zone) => {
+        queryOptions = {};
+        query = "";
+        queryOptions = zoneQuery[zone];
+        switch (zone) {
+            case "chosen": {
+                if (deck.legend && deck.legend.length > 0) {
+                    const legendChampion = deck.legend[0].data.champion_tag;
+                    query = legendChampion;
+                    const legendColor = JSON.parse(
+                        deck.legend[0].data.card_color_list,
+                    );
+                    queryOptions.color = legendColor;
+                }
+                break;
+            }
+            case "main":
+            case "sideboard":
+            case "runes": {
+                if (deck.legend && deck.legend.length > 0) {
+                    const legendColor = JSON.parse(
+                        deck.legend[0].data.card_color_list,
+                    );
+                    queryOptions.color = legendColor;
+                }
+                break;
+            }
+            default:
+                break;
+        }
+        loadCards(true);
+    };
 </script>
 
 <CardModal
@@ -251,7 +505,7 @@
         showCardModal = false;
     }}
     isConnected={true}
-    onConfirm={addToDeck}
+    onConfirm={() => addToDeck(selectedCard)}
 />
 
 <div class="deck-info">
@@ -262,9 +516,19 @@
         style="display:flex;flex: 1; background-color: var(--background); font-size: smaller; gap: 10px; justify-content: center;"
     >
         {#each Object.entries(zoneLimit) as [zoneKey, limit]}
-            <div>
+            <div
+                role="presentation"
+                onclick={() => {
+                    filterWithZone(zoneKey);
+                }}
+            >
                 <div>{zoneNames[zoneKey]}</div>
-                <div style="text-align: center;">{limit}</div>
+                <div style="text-align: center;">
+                    {deck[zoneKey].reduce(
+                        (sum, c) => sum + (c.quantity || 1),
+                        0,
+                    )}/{limit}
+                </div>
             </div>
         {/each}
     </div>
@@ -290,16 +554,67 @@
 
                             <div class="cards">
                                 {#each cards as cardDeck}
-                                    <div class="deckcard">
+                                    <div
+                                        role="presentation"
+                                        class="deckcard"
+                                        onclick={() => {
+                                            const index = deck[
+                                                zoneKey
+                                            ].findIndex(
+                                                (c) =>
+                                                    c.card_no ===
+                                                    cardDeck.card_no,
+                                            );
+
+                                            if (index === -1) return;
+                                            const updated = [...deck[zoneKey]];
+
+                                            if (updated[index].quantity <= 1) {
+                                                updated.splice(index, 1);
+                                            } else {
+                                                updated[index] = {
+                                                    ...updated[index],
+                                                    quantity:
+                                                        updated[index]
+                                                            .quantity - 1,
+                                                };
+                                            }
+
+                                            deck = {
+                                                ...deck,
+                                                [zoneKey]: updated,
+                                            };
+                                        }}
+                                        oncontextmenu={(e) => {
+                                            e.preventDefault();
+                                            showCardModal = true;
+                                            selectedCard = cardDeck.data;
+                                            selectedCardImg =
+                                                imageUrls[cardDeck.card_no];
+                                        }}
+                                    >
                                         <img
+                                            class={cardDeck.data
+                                                .card_category_name === "战场"
+                                                ? "landscape"
+                                                : ""}
                                             src={cardDeck.img}
                                             alt={cardDeck.data.card_name}
                                         />
                                         <div class="name">
-                                            {cardDeck.data.card_name}
-                                            {cardDeck.data.sub_title
-                                                ? " " + cardDeck.data.sub_title
-                                                : ""}
+                                            <div>
+                                                {cardDeck.data
+                                                    .card_name}{cardDeck.data
+                                                    .sub_title
+                                                    ? "·" +
+                                                      cardDeck.data.sub_title
+                                                    : ""}
+                                            </div>
+                                            <div
+                                                style="font-size: smaller; opacity: 70%;"
+                                            >
+                                                {cardDeck.card_no}
+                                            </div>
                                         </div>
                                         <div class="count">
                                             {cardDeck.quantity}
@@ -307,6 +622,7 @@
                                     </div>
                                 {/each}
                             </div>
+                            <hr />
                         </div>
                     {/if}
                 {/each}
@@ -511,30 +827,8 @@
             {#each cards as card}
                 <div
                     class="card"
-                    onclick={(e) => {
-                        const existingIndex = deck.main.findIndex(
-                            (c) => c.card_no === card.card_no,
-                        );
-
-                        if (existingIndex !== -1) {
-                            // 已存在 → 增加数量
-                            const updated = [...deck.main];
-                            updated[existingIndex] = {
-                                ...updated[existingIndex],
-                                quantity: updated[existingIndex].quantity + 1,
-                            };
-                            deck = { ...deck, main: updated };
-                        } else {
-                            // 不存在 → 添加新卡
-                            const cardData = {
-                                card_no: card.card_no,
-                                zone: "main",
-                                quantity: 1,
-                                img: imageUrls[card.card_no],
-                                data: card,
-                            };
-                            deck = { ...deck, main: [...deck.main, cardData] };
-                        }
+                    onclick={() => {
+                        addToDeck(card);
                     }}
                     oncontextmenu={(e) => {
                         e.preventDefault();
@@ -646,18 +940,12 @@
     .deck-container {
         display: flex;
         flex-direction: column;
-        gap: 1.5rem;
     }
 
     .cards {
         display: flex;
         flex-wrap: wrap;
         row-gap: 8px;
-    }
-
-    .zone-title {
-        margin-top: 0.2rem;
-        margin-bottom: 0.5rem;
     }
 
     .zone .deckcard {
@@ -667,7 +955,7 @@
         height: 40px;
         object-fit: cover;
         border-radius: 5px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         overflow: hidden;
         position: relative;
         transition: transform 0.2s ease-in-out;
@@ -683,6 +971,11 @@
         transform: scale(1.1);
     }
 
+    .deckcard img.landscape {
+        transform: rotate(0.75turn) scale(0.75);
+        top: -160%;
+    }
+
     .zone .deckcard .name {
         font-size: small;
         position: absolute;
@@ -690,7 +983,7 @@
         background: linear-gradient(
             90deg,
             rgba(2, 0, 36, 1) 0%,
-            rgba(0, 0, 0, 0.6) 30%,
+            rgba(0, 0, 0, 0.6) 20%,
             rgba(0, 212, 255, 0) 100%
         );
         padding-left: 12px;
@@ -698,6 +991,12 @@
         height: 100%;
         display: flex;
         align-items: center;
+        flex-wrap: wrap;
+        align-content: center;
+    }
+
+    .zone .deckcard .name div {
+        width: 100%;
     }
 
     .zone .deckcard .count {
@@ -717,6 +1016,7 @@
 
     .deckcard:hover {
         transform: translateX(5px);
+        box-shadow: 0 0 10px rgb(34, 34, 34, 0.8);
     }
 
     /* control filter */

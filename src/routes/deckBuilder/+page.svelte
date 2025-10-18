@@ -64,6 +64,10 @@
     let addingMode = false;
     let selectedCardImg = null;
     let selectedCard = null;
+    let contextMenuVisible = false;
+    let contextMenuZoneFrom = null;
+    let contextMenuX = 0;
+    let contextMenuY = 0;
 
     const updateRange = async () => {
         const res = await getDiffLimits();
@@ -84,18 +88,15 @@
         a.length === b.length &&
         a.every((v, i) => v === b[i]);
 
-    const checkFilterExists = () => {
-        return (
-            (Object.keys(queryOptions).length > 0 &&
-                Object.values(queryOptions).some(
-                    (arr) => Array.isArray(arr) && arr.length > 0,
-                )) ||
-            query.trim() !== "" ||
-            !arraysEqual(powerValues, powerLimit) ||
-            !arraysEqual(energyValues, energyLimit) ||
-            !arraysEqual(mightValues, mightLimit)
-        );
-    };
+    $: hasFilter =
+        (Object.keys(queryOptions).length > 0 &&
+            Object.values(queryOptions).some(
+                (arr) => Array.isArray(arr) && arr.length > 0,
+            )) ||
+        query.trim() !== "" ||
+        !arraysEqual(powerValues, powerLimit) ||
+        !arraysEqual(energyValues, energyLimit) ||
+        !arraysEqual(mightValues, mightLimit);
 
     function toggleFilter(type, value) {
         const current = { ...queryOptions };
@@ -214,6 +215,13 @@
         const legendTag = deck.legend[0].data.champion_tag;
         return championTag === legendTag;
     };
+
+    const isChosenAvailable = (championTag) => {
+        if (!deck.legend.length) return true;
+        const legendTag = deck.legend[0].data.champion_tag;
+        return championTag === legendTag;
+    };
+
     const normalize = (v) => (v ?? "").trim();
     const signatureTypes = new Set(["专属单位", "专属法术", "专属装备"]);
     const addToDeck = (card) => {
@@ -236,7 +244,7 @@
             case "专属法术": {
                 if (
                     deck.main.reduce((sum, c) => sum + (c.quantity || 1), 0) >=
-                    40
+                    39
                 ) {
                     console.log("主卡堆满了");
                     return;
@@ -290,18 +298,32 @@
             case "装备":
             case "单位":
             case "英雄单位": {
+                if (selectMode === "chosen") {
+                    selectedCard = card;
+                    setAsChosen();
+                    selectedCard = null;
+                    return;
+                }
+                const inputzone =
+                    selectMode === "default" ? "main" : "sideboard";
+
                 if (
-                    deck.main.reduce((sum, c) => sum + (c.quantity || 1), 0) >=
-                    40
+                    deck[inputzone].reduce(
+                        (sum, c) => sum + (c.quantity || 1),
+                        0,
+                    ) >= zoneLimit[inputzone]
                 ) {
                     console.log("主卡堆满了");
                     return;
                 }
-                const existingIndex = deck.main.findIndex(
-                    (c) => c.card_no === card.card_no,
-                );
 
-                const sameNameCards = deck.main.filter(
+                const threeCombineDeck = [
+                    ...deck.chosen,
+                    ...deck.main,
+                    ...deck.sideboard,
+                ];
+
+                const sameNameCards = threeCombineDeck.filter(
                     (c) =>
                         normalize(card.card_name) ===
                             normalize(c.data.card_name) &&
@@ -316,24 +338,30 @@
 
                 if (sameCardCount >= 3) return;
 
+                const existingIndex = deck[inputzone].findIndex(
+                    (c) => c.card_no === card.card_no,
+                );
+
+                console.log();
+
                 if (existingIndex !== -1) {
-                    const updated = [...deck.main];
+                    const updated = [...deck[inputzone]];
                     updated[existingIndex] = {
                         ...updated[existingIndex],
                         quantity: updated[existingIndex].quantity + 1,
                     };
-                    deck = { ...deck, main: updated };
+                    deck = { ...deck, [inputzone]: updated };
                 } else {
                     const cardData = {
                         card_no: card.card_no,
-                        zone: "main",
+                        zone: inputzone,
                         quantity: 1,
                         img: imageUrls[card.card_no],
                         data: card,
                     };
                     deck = {
                         ...deck,
-                        main: [...deck.main, cardData],
+                        [inputzone]: [...deck[inputzone], cardData],
                     };
                 }
                 break;
@@ -410,6 +438,7 @@
     };
 
     onMount(async () => {
+        window.addEventListener("click", closeMenu);
         filters = await getDistinctFilters();
         await updateRange();
         initObserver();
@@ -428,7 +457,7 @@
     const zoneLimit = {
         legend: 1,
         chosen: 1,
-        main: 40,
+        main: 39,
         runes: 12,
         battlefield: 3,
         sideboard: 8,
@@ -436,7 +465,6 @@
 
     const zoneQuery = {
         legend: { type: ["传奇"] },
-        chosen: { type: ["英雄单位"] },
         main: {
             type: [
                 "专属单位",
@@ -448,6 +476,8 @@
                 "装备",
             ],
         },
+        chosen: { type: ["英雄单位"] },
+        signature: { type: ["专属单位", "专属法术", "专属装备"] },
         runes: { type: ["符文"] },
         battlefield: { type: ["战场"] },
         sideboard: {
@@ -468,6 +498,7 @@
         query = "";
         queryOptions = zoneQuery[zone];
         switch (zone) {
+            case "signature":
             case "chosen": {
                 if (deck.legend && deck.legend.length > 0) {
                     const legendChampion = deck.legend[0].data.champion_tag;
@@ -495,6 +526,164 @@
         }
         loadCards(true);
     };
+
+    const goBack = () => {
+        window.history.back();
+    };
+
+    function handleContextMenu(e, card, zone) {
+        e.preventDefault();
+        selectedCard = card;
+        contextMenuX = e.clientX;
+        contextMenuY = e.clientY;
+        contextMenuVisible = false;
+        setTimeout(() => {
+            contextMenuVisible = true;
+        }, 50);
+        contextMenuZoneFrom = zone;
+    }
+
+    function closeMenu() {
+        contextMenuVisible = false;
+        contextMenuZoneFrom = null;
+    }
+
+    const setAsChosen = () => {
+        const card = selectedCard;
+        if (!card) return;
+        if (!isChosenAvailable(selectedCard.champion_tag)) return;
+
+        const cardData = {
+            card_no: card.card_no,
+            zone: "chosen",
+            quantity: 1,
+            img: imageUrls[card.card_no],
+            data: card,
+        };
+
+        if (selectMode === "chosen" && contextMenuZoneFrom !== "main") {
+            deck = { ...deck, chosen: [cardData] };
+        } else {
+            const chosenList = [...deck.chosen];
+
+            const existingIndex = deck.main.findIndex(
+                (c) => c.card_no === card.card_no,
+            );
+
+            if (existingIndex === -1) return;
+
+            const mainList = [...deck.main];
+            const needRemove = mainList[existingIndex].quantity === 1;
+
+            if (needRemove) {
+                mainList.splice(existingIndex, 1);
+            } else {
+                mainList[existingIndex] = {
+                    ...mainList[existingIndex],
+                    quantity: mainList[existingIndex].quantity - 1,
+                };
+            }
+
+            if (!chosenList.length) {
+                deck = { ...deck, chosen: [cardData], main: mainList };
+            } else {
+                const prevChosen = { ...chosenList[0] };
+                deck = { ...deck, chosen: [cardData], main: mainList };
+                addToDeck(prevChosen.data);
+            }
+        }
+    };
+
+    function handleMenuAction(action) {
+        switch (action) {
+            case "view":
+                selectedCardImg = imageUrls[selectedCard.card_no];
+                showCardModal = true;
+                break;
+            case "delete":
+                console.log("删除卡片", selectedCard.card_no);
+                break;
+            case "copyCardName":
+                const sub = selectedCard.sub_title
+                    ? " " + selectedCard.sub_title
+                    : "";
+                navigator.clipboard.writeText(selectedCard.card_name + sub);
+                break;
+            case "copyCardNo":
+                navigator.clipboard.writeText(selectedCard.card_no);
+                break;
+            case "setAsChosenFromDeck":
+                setAsChosen();
+                break;
+        }
+        contextMenuVisible = false;
+    }
+
+    const getMenuList = () => {
+        const base = [
+            { label: "查看信息", action: "view" },
+            { label: "复制编号", action: "copyCardNo" },
+            { label: "复制名字", action: "copyCardName" },
+        ];
+        if (
+            contextMenuZoneFrom === "main" &&
+            selectedCard.card_category_name === "英雄单位" &&
+            isChosenAvailable(selectedCard.champion_tag)
+        ) {
+            base.push({ label: "设为选定英雄", action: "setAsChosenFromDeck" });
+        }
+        return base;
+    };
+
+    let selectMode = "default";
+    const options = [
+        { value: "default", label: "默认" },
+        { value: "chosen", label: "选定英雄" },
+        { value: "sideboard", label: "备牌" },
+    ];
+
+    $: if (selectMode) {
+        if (selectMode === "chosen") {
+            filterWithZone(selectMode);
+        }
+    }
+
+    function isCardValid(card, zone) {
+        if (!card) return;
+        const invalid = [];
+
+        if (deck.legend.length) {
+            switch (zone) {
+                case "chosen":
+                    if (!isChosenAvailable(card.data.champion_tag)) {
+                        invalid.push("选定英雄不符合传奇");
+                    }
+                default:
+                    break;
+            }
+        }
+
+        const allThreeCards = [...deck.chosen, ...deck.main, ...deck.sideboard];
+
+        const sameNameCards = allThreeCards.filter(
+            (c) =>
+                normalize(card.data.card_name) ===
+                    normalize(c.data.card_name) &&
+                normalize(card.data.sub_title) === normalize(c.data.sub_title),
+        );
+
+        const sameCardCount = sameNameCards.reduce(
+            (sum, c) => sum + (c.quantity || 1),
+            0,
+        );
+
+        if (sameCardCount > 3) invalid.push("同名卡牌超过3张。");
+
+        return {
+            valid: invalid.length === 0,
+            errors: invalid,
+        };
+    }
 </script>
 
 <CardModal
@@ -512,119 +701,144 @@
     <div class="deck-name-container">
         <input class="deck-name" type="text" placeholder="卡组名称" />
     </div>
-    <div
-        style="display:flex;flex: 1; background-color: var(--background); font-size: smaller; gap: 10px; justify-content: center;"
-    >
-        {#each Object.entries(zoneLimit) as [zoneKey, limit]}
-            <div
-                role="presentation"
-                onclick={() => {
-                    filterWithZone(zoneKey);
-                }}
-            >
-                <div>{zoneNames[zoneKey]}</div>
-                <div style="text-align: center;">
-                    {deck[zoneKey].reduce(
-                        (sum, c) => sum + (c.quantity || 1),
-                        0,
-                    )}/{limit}
-                </div>
-            </div>
+    <div>
+        添加模式：
+        {#each options as opt}
+            <label>
+                <input
+                    type="radio"
+                    name="selectType"
+                    bind:group={selectMode}
+                    value={opt.value}
+                />
+                {opt.label}
+            </label>
         {/each}
     </div>
     <div>
-        <i class="fa-solid fa-list"></i>
-        <!-- <button title="网格" aria-label="网格"><i class="fa-solid fa-table-cells"></i></button> -->
-        <i class="fa-solid fa-square-poll-vertical"></i>
+        <button aria-label="取消" onclick={goBack}>取消</button>
+        <button aria-label="完成">完成</button>
     </div>
 </div>
+
+{#if contextMenuVisible}
+    <div
+        class="context-menu"
+        style="top: {contextMenuY}px; left: {contextMenuX}px;"
+    >
+        {#each getMenuList() as item}
+            <div
+                class="menu-item"
+                role="presentation"
+                onclick={() => handleMenuAction(item.action)}
+            >
+                {item.label}
+            </div>
+        {/each}
+    </div>
+{/if}
+
 <div class="page">
     <div class="part sidebar">
         <div class="deck">
             <div class="deck-container">
                 {#each Object.entries(deck) as [zoneKey, cards]}
-                    {#if cards.length > 0}
-                        <div class="zone">
-                            <!-- <h3 class="zone-title">
+                    <!-- {#if cards.length > 0} -->
+                    <div class="zone">
+                        <h6
+                            class="zone-title"
+                            role="presentation"
+                            onclick={() => {
+                                filterWithZone(zoneKey);
+                            }}
+                        >
+                            <div>
                                 {zoneNames[zoneKey] || zoneKey} ({cards.reduce(
                                     (sum, c) => sum + (c.quantity || 1),
                                     0,
-                                )}/40)
-                            </h3> -->
+                                )}/{zoneLimit[zoneKey]})
+                            </div>
+                            {#if false}
+                                <button aria-label="info">
+                                    <i class="fa-solid fa-circle-info"></i>
+                                </button>
+                            {/if}
+                        </h6>
 
-                            <div class="cards">
-                                {#each cards as cardDeck}
-                                    <div
-                                        role="presentation"
-                                        class="deckcard"
-                                        onclick={() => {
-                                            const index = deck[
-                                                zoneKey
-                                            ].findIndex(
-                                                (c) =>
-                                                    c.card_no ===
-                                                    cardDeck.card_no,
-                                            );
+                        <div class="cards">
+                            {#each cards as cardDeck}
+                                {@const result = isCardValid(cardDeck, zoneKey)}
+                                <div
+                                    role="presentation"
+                                    class="deckcard"
+                                    onclick={() => {
+                                        const index = deck[zoneKey].findIndex(
+                                            (c) =>
+                                                c.card_no === cardDeck.card_no,
+                                        );
 
-                                            if (index === -1) return;
-                                            const updated = [...deck[zoneKey]];
+                                        if (index === -1) return;
+                                        const updated = [...deck[zoneKey]];
 
-                                            if (updated[index].quantity <= 1) {
-                                                updated.splice(index, 1);
-                                            } else {
-                                                updated[index] = {
-                                                    ...updated[index],
-                                                    quantity:
-                                                        updated[index]
-                                                            .quantity - 1,
-                                                };
-                                            }
-
-                                            deck = {
-                                                ...deck,
-                                                [zoneKey]: updated,
+                                        if (updated[index].quantity <= 1) {
+                                            updated.splice(index, 1);
+                                        } else {
+                                            updated[index] = {
+                                                ...updated[index],
+                                                quantity:
+                                                    updated[index].quantity - 1,
                                             };
-                                        }}
-                                        oncontextmenu={(e) => {
-                                            e.preventDefault();
-                                            showCardModal = true;
-                                            selectedCard = cardDeck.data;
-                                            selectedCardImg =
-                                                imageUrls[cardDeck.card_no];
-                                        }}
-                                    >
-                                        <img
-                                            class={cardDeck.data
-                                                .card_category_name === "战场"
-                                                ? "landscape"
+                                        }
+
+                                        deck = {
+                                            ...deck,
+                                            [zoneKey]: updated,
+                                        };
+                                    }}
+                                    oncontextmenu={(e) => {
+                                        handleContextMenu(
+                                            e,
+                                            cardDeck.data,
+                                            zoneKey,
+                                        );
+                                    }}
+                                >
+                                    <img
+                                        class={cardDeck.data
+                                            .card_category_name === "战场"
+                                            ? "landscape"
+                                            : ""}
+                                        src={cardDeck.img}
+                                        alt={cardDeck.data.card_name}
+                                    />
+                                    <div class="name">
+                                        <div>
+                                            {cardDeck.data.card_name}{cardDeck
+                                                .data.sub_title
+                                                ? "·" + cardDeck.data.sub_title
                                                 : ""}
-                                            src={cardDeck.img}
-                                            alt={cardDeck.data.card_name}
-                                        />
-                                        <div class="name">
-                                            <div>
-                                                {cardDeck.data
-                                                    .card_name}{cardDeck.data
-                                                    .sub_title
-                                                    ? "·" +
-                                                      cardDeck.data.sub_title
-                                                    : ""}
-                                            </div>
-                                            <div
-                                                style="font-size: smaller; opacity: 70%;"
-                                            >
-                                                {cardDeck.card_no}
-                                            </div>
                                         </div>
-                                        <div class="count">
-                                            {cardDeck.quantity}
+                                        <div
+                                            style="font-size: smaller; opacity: 70%;"
+                                        >
+                                            {cardDeck.card_no}
                                         </div>
                                     </div>
-                                {/each}
-                            </div>
-                            <hr />
+                                    <div
+                                        class="count"
+                                        style="background-color: {result.valid
+                                            ? 'var(--primary)'
+                                            : 'var(--color-error)'};"
+                                        title={result.errors.join("\n")}
+                                    >
+                                        {cardDeck.quantity}
+                                    </div>
+                                </div>
+                            {/each}
                         </div>
-                    {/if}
+                        <hr />
+                    </div>
+                    <!-- {/if} -->
                 {/each}
             </div>
         </div>
@@ -655,7 +869,7 @@
                 <option value="return_energy-desc">符能↓</option>
             </select>
             <button onclick={() => (filterVisible = true)}>筛选</button>
-            {#if checkFilterExists()}
+            {#if hasFilter}
                 <button onclick={clearAllFilters}>重置</button>
             {/if}
         </div>
@@ -831,10 +1045,7 @@
                         addToDeck(card);
                     }}
                     oncontextmenu={(e) => {
-                        e.preventDefault();
-                        showCardModal = true;
-                        selectedCard = card;
-                        selectedCardImg = imageUrls[card.card_no];
+                        handleContextMenu(e, card, "list");
                     }}
                     role="presentation"
                 >
@@ -894,7 +1105,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        flex-wrap: wrap;
+        /* flex-wrap: wrap; */
         padding: 12px 16px;
         height: 52px;
         gap: 10px;
@@ -946,6 +1157,20 @@
         display: flex;
         flex-wrap: wrap;
         row-gap: 8px;
+    }
+
+    .zone-title {
+        margin: 0;
+        margin-bottom: 5px;
+        font-size: small;
+        cursor: pointer;
+        font-weight: bold;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .zone-title button {
+        all: unset;
     }
 
     .zone .deckcard {
@@ -1222,5 +1447,28 @@
             width: 95%;
             max-width: 500px;
         }
+    }
+
+    /* contextmenu */
+    .context-menu {
+        position: fixed;
+        overflow: hidden;
+        background: var(--background);
+        border: 1px solid var(--muted);
+        border-radius: 8px;
+        min-width: 150px;
+        z-index: 9999;
+        color: var(--text);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .menu-item {
+        font-size: small;
+        padding: 8px 12px;
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+    .menu-item:hover {
+        background: var(--card-background);
     }
 </style>

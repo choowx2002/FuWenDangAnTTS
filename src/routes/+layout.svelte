@@ -241,7 +241,7 @@
                 type="button"
                 title="首页"
             >
-                <i class="fa-solid fa-home fa-lg"></i><span>Home</span>
+               <span>首页</span>
             </button>
 
             <button
@@ -251,7 +251,7 @@
                 type="button"
                 title="卡牌库"
             >
-                <i class="fa-solid fa-image fa-lg"></i><span>Cards</span>
+                <span>卡牌图鉴</span>
             </button>
 
             <button
@@ -261,7 +261,7 @@
                 type="button"
                 title="卡组构筑"
             >
-                <i class="fa-solid fa-folder fa-lg"></i><span>Decks</span>
+                <span>卡组构筑</span>
             </button>
 
             <div class="bottom-btn-group">
@@ -460,12 +460,12 @@
 
     button:hover {
         background: var(--primary);
-        color: var(--card-background);
+        /* color: var(--card-background); */
     }
 
     button.selected {
         background: var(--primary);
-        color: var(--card-background);
+        /* color: var(--card-background); */
     }
 
     button.nav-btn span {

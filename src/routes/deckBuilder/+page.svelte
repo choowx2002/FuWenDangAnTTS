@@ -1,7 +1,12 @@
 <script>
     // @ts-nocheck
 
-    import { getDiffLimits, getDistinctFilters, searchCards } from "$lib/db";
+    import {
+        getDiffLimits,
+        getDistinctFilters,
+        saveDeck,
+        searchCards,
+    } from "$lib/db";
     import { loadExternalImage } from "$lib/fs";
     import { onMount, tick } from "svelte";
     import CardModal from "../../components/CardModal.svelte";
@@ -68,6 +73,21 @@
     let contextMenuZoneFrom = null;
     let contextMenuX = 0;
     let contextMenuY = 0;
+    let selectMode = "default";
+    const options = [
+        { value: "default", label: "默认" },
+        { value: "sideboard", label: "备牌" },
+    ];
+
+    $: hasFilter =
+        (Object.keys(queryOptions).length > 0 &&
+            Object.values(queryOptions).some(
+                (arr) => Array.isArray(arr) && arr.length > 0,
+            )) ||
+        query.trim() !== "" ||
+        !arraysEqual(powerValues, powerLimit) ||
+        !arraysEqual(energyValues, energyLimit) ||
+        !arraysEqual(mightValues, mightLimit);
 
     const updateRange = async () => {
         const res = await getDiffLimits();
@@ -87,16 +107,6 @@
         Array.isArray(b) &&
         a.length === b.length &&
         a.every((v, i) => v === b[i]);
-
-    $: hasFilter =
-        (Object.keys(queryOptions).length > 0 &&
-            Object.values(queryOptions).some(
-                (arr) => Array.isArray(arr) && arr.length > 0,
-            )) ||
-        query.trim() !== "" ||
-        !arraysEqual(powerValues, powerLimit) ||
-        !arraysEqual(energyValues, energyLimit) ||
-        !arraysEqual(mightValues, mightLimit);
 
     function toggleFilter(type, value) {
         const current = { ...queryOptions };
@@ -222,9 +232,27 @@
         return championTag === legendTag;
     };
 
+    const isColorAvailable = (card_color_list) => {
+        if (!deck.legend.length) return true;
+        const legendColor = JSON.parse(deck.legend[0].data.card_color_list);
+        const colorList = JSON.parse(card_color_list);
+        for (const color of colorList) {
+            if (!legendColor.includes(color) && color !== "colorless") {
+                return false;
+            }
+        }
+        return true;
+    };
+
     const normalize = (v) => (v ?? "").trim();
     const signatureTypes = new Set(["专属单位", "专属法术", "专属装备"]);
     const addToDeck = (card) => {
+        const scrollToCard = (id, zone) => {
+            setTimeout(() => {
+                const el = document.getElementById(`${zone}-${id}`);
+                el?.scrollIntoView({ behavior: "smooth", block: "center" });
+            }, 50);
+        };
         switch (card.card_category_name) {
             case "传奇": {
                 const updated = [...deck.legend];
@@ -236,21 +264,32 @@
                     data: card,
                 };
                 deck = { ...deck, legend: [cardData] };
+                scrollToCard(card.card_no, cardData.zone);
                 break;
             }
 
             case "专属装备":
             case "专属单位":
             case "专属法术": {
+                 const inputzone =
+                    selectMode === "default" ? "main" : "sideboard";
                 if (
-                    deck.main.reduce((sum, c) => sum + (c.quantity || 1), 0) >=
-                    39
+                    deck[inputzone].reduce(
+                        (sum, c) => sum + (c.quantity || 1),
+                        0,
+                    ) >= zoneLimit[inputzone]
                 ) {
-                    console.log("主卡堆满了");
+                    console.log(inputzone, "满了");
                     return;
                 }
 
-                const signatures = deck.main.filter((card) =>
+                 const threeCombineDeck = [
+                    ...deck.chosen,
+                    ...deck.main,
+                    ...deck.sideboard,
+                ];
+
+                const signatures = threeCombineDeck.filter((card) =>
                     signatureTypes.has(card.data.card_category_name),
                 );
 
@@ -266,31 +305,31 @@
                 // 检查传奇适配度
                 if (!isSignCardAvailable(card.champion_tag)) return;
 
-                const existingIndex = deck.main.findIndex(
+                const existingIndex = deck[inputzone].findIndex(
                     (c) => c.card_no === card.card_no,
                 );
 
                 if (existingIndex !== -1) {
-                    const updated = [...deck.main];
+                    const updated = [...deck[inputzone]];
                     updated[existingIndex] = {
                         ...updated[existingIndex],
                         quantity: updated[existingIndex].quantity + 1,
                     };
-                    deck = { ...deck, main: updated };
+                    deck = { ...deck, [inputzone]: updated };
                 } else {
                     const cardData = {
                         card_no: card.card_no,
-                        zone: "main",
+                        zone: inputzone,
                         quantity: 1,
                         img: imageUrls[card.card_no],
                         data: card,
                     };
                     deck = {
                         ...deck,
-                        main: [...deck.main, cardData],
+                        [inputzone]: [...deck[inputzone], cardData],
                     };
                 }
-
+                scrollToCard(card.card_no, inputzone);
                 break;
             }
 
@@ -298,12 +337,12 @@
             case "装备":
             case "单位":
             case "英雄单位": {
-                if (selectMode === "chosen") {
-                    selectedCard = card;
-                    setAsChosen();
-                    selectedCard = null;
-                    return;
-                }
+                // if (selectMode === "chosen") {
+                //     selectedCard = card;
+                //     setAsChosen();
+                //     selectedCard = null;
+                //     return;
+                // }
                 const inputzone =
                     selectMode === "default" ? "main" : "sideboard";
 
@@ -342,8 +381,6 @@
                     (c) => c.card_no === card.card_no,
                 );
 
-                console.log();
-
                 if (existingIndex !== -1) {
                     const updated = [...deck[inputzone]];
                     updated[existingIndex] = {
@@ -364,6 +401,7 @@
                         [inputzone]: [...deck[inputzone], cardData],
                     };
                 }
+                scrollToCard(card.card_no, inputzone);
                 break;
             }
 
@@ -399,6 +437,7 @@
                         runes: [...deck.runes, cardData],
                     };
                 }
+                scrollToCard(card.card_no, "runes");
                 break;
             }
 
@@ -429,6 +468,7 @@
                         battlefield: [...deck.battlefield, cardData],
                     };
                 }
+                scrollToCard(card.card_no, "battlefield");
                 break;
             }
 
@@ -496,7 +536,8 @@
     const filterWithZone = (zone) => {
         queryOptions = {};
         query = "";
-        queryOptions = zoneQuery[zone];
+        queryOptions = { ...zoneQuery[zone] };
+        selectMode = zone === "sideboard" ? "sideboard" : "default";
         switch (zone) {
             case "signature":
             case "chosen": {
@@ -561,37 +602,47 @@
             data: card,
         };
 
-        if (selectMode === "chosen" && contextMenuZoneFrom !== "main") {
-            deck = { ...deck, chosen: [cardData] };
+        const chosenList = [...deck.chosen];
+
+        const existingIndex = deck.main.findIndex(
+            (c) => c.card_no === card.card_no,
+        );
+
+        if (existingIndex === -1) return;
+
+        const mainList = [...deck.main];
+        const needRemove = mainList[existingIndex].quantity === 1;
+
+        if (needRemove) {
+            mainList.splice(existingIndex, 1);
         } else {
-            const chosenList = [...deck.chosen];
-
-            const existingIndex = deck.main.findIndex(
-                (c) => c.card_no === card.card_no,
-            );
-
-            if (existingIndex === -1) return;
-
-            const mainList = [...deck.main];
-            const needRemove = mainList[existingIndex].quantity === 1;
-
-            if (needRemove) {
-                mainList.splice(existingIndex, 1);
-            } else {
-                mainList[existingIndex] = {
-                    ...mainList[existingIndex],
-                    quantity: mainList[existingIndex].quantity - 1,
-                };
-            }
-
-            if (!chosenList.length) {
-                deck = { ...deck, chosen: [cardData], main: mainList };
-            } else {
-                const prevChosen = { ...chosenList[0] };
-                deck = { ...deck, chosen: [cardData], main: mainList };
-                addToDeck(prevChosen.data);
-            }
+            mainList[existingIndex] = {
+                ...mainList[existingIndex],
+                quantity: mainList[existingIndex].quantity - 1,
+            };
         }
+
+        if (!chosenList.length) {
+            deck = { ...deck, chosen: [cardData], main: mainList };
+        } else {
+            const prevChosen = { ...chosenList[0] };
+            deck = { ...deck, chosen: [cardData], main: mainList };
+            addToDeck(prevChosen.data);
+        }
+    };
+
+    const removeCardFromDeck = (zone, card_no) => {
+        const index = deck[zone].findIndex((c) => c.card_no === card_no);
+
+        if (index === -1) return;
+        const updated = [...deck[zone]];
+
+        updated.splice(index, 1);
+
+        deck = {
+            ...deck,
+            [zone]: updated,
+        };
     };
 
     function handleMenuAction(action) {
@@ -599,9 +650,6 @@
             case "view":
                 selectedCardImg = imageUrls[selectedCard.card_no];
                 showCardModal = true;
-                break;
-            case "delete":
-                console.log("删除卡片", selectedCard.card_no);
                 break;
             case "copyCardName":
                 const sub = selectedCard.sub_title
@@ -615,6 +663,9 @@
             case "setAsChosenFromDeck":
                 setAsChosen();
                 break;
+            case "removeCardFromDeck":
+                removeCardFromDeck(contextMenuZoneFrom, selectedCard.card_no);
+                break;
         }
         contextMenuVisible = false;
     }
@@ -624,6 +675,7 @@
             { label: "查看信息", action: "view" },
             { label: "复制编号", action: "copyCardNo" },
             { label: "复制名字", action: "copyCardName" },
+            { label: "移除此卡牌", action: "removeCardFromDeck" },
         ];
         if (
             contextMenuZoneFrom === "main" &&
@@ -635,55 +687,91 @@
         return base;
     };
 
-    let selectMode = "default";
-    const options = [
-        { value: "default", label: "默认" },
-        { value: "chosen", label: "选定英雄" },
-        { value: "sideboard", label: "备牌" },
-    ];
+    const isCardValid = (card, zone) => {
+        if (!card || !card.data) return;
 
-    $: if (selectMode) {
-        if (selectMode === "chosen") {
-            filterWithZone(selectMode);
-        }
-    }
+        const errors = [];
+        const data = card.data;
 
-    function isCardValid(card, zone) {
-        if (!card) return;
-        const invalid = [];
-
+        // === 1. 传奇相关检查 ===
         if (deck.legend.length) {
-            switch (zone) {
-                case "chosen":
-                    if (!isChosenAvailable(card.data.champion_tag)) {
-                        invalid.push("选定英雄不符合传奇");
-                    }
-                default:
-                    break;
+            const isChosenZone = zone === "chosen";
+
+            if (isChosenZone) {
+                if (!isChosenAvailable(data.champion_tag)) {
+                    errors.push("选定英雄不符合传奇。");
+                }
+            } else if (!isColorAvailable(data.card_color_list)) {
+                errors.push("符文特性不符合传奇。");
             }
         }
 
-        const allThreeCards = [...deck.chosen, ...deck.main, ...deck.sideboard];
+        // === 2. 专属卡牌适配检查 ===
+        const isSignature = signatureTypes.has(data.card_category_name);
+        if (
+            data.champion_tag &&
+            isSignature &&
+            !isSignCardAvailable(data.champion_tag)
+        ) {
+            errors.push("专属卡牌不符合传奇。");
+        }
 
-        const sameNameCards = allThreeCards.filter(
+        // === 3. 同名卡数量限制检查 ===
+        const allDeckCards = [...deck.chosen, ...deck.main, ...deck.sideboard];
+
+        const sameNameCards = allDeckCards.filter(
             (c) =>
-                normalize(card.data.card_name) ===
-                    normalize(c.data.card_name) &&
-                normalize(card.data.sub_title) === normalize(c.data.sub_title),
+                normalize(c.data.card_name) === normalize(data.card_name) &&
+                normalize(c.data.sub_title) === normalize(data.sub_title),
         );
 
-        const sameCardCount = sameNameCards.reduce(
+        const totalSameCards = sameNameCards.reduce(
             (sum, c) => sum + (c.quantity || 1),
             0,
         );
 
-        if (sameCardCount > 3) invalid.push("同名卡牌超过3张。");
+        if (totalSameCards > 3) {
+            errors.push("同名卡牌超过3张。");
+        }
 
-        return {
-            valid: invalid.length === 0,
-            errors: invalid,
+        // === 4. 生成校验结果 ===
+        const result = {
+            valid: errors.length === 0,
+            errors,
         };
-    }
+
+        card.errors = result.valid ? [] : result.errors;
+        return result;
+    };
+
+    const beforeSaveDeck = () => {
+        const isZoneInvalid = (zoneKey) =>
+            deck[zoneKey]?.some((c) => c?.errors?.length > 0);
+        for (const zone in deck) {
+            if (!Object.hasOwn(deck, zone)) continue;
+            console.log(zone, deck[zone]);
+        }
+
+        const newDeckData = {
+            id: deckId,
+            name: deckName ?? "",
+            description: deckDesc ?? "",
+            ...deck,
+        };
+
+        saveDeck(newDeckData)
+            .then((id) => {
+                console.log("ID: ", id);
+                goBack();
+            })
+            .catch((err) => {
+                console.log("err: ", err);
+            });
+    };
+
+    let deckId = null;
+    let deckName = null;
+    let deckDesc = null;
 </script>
 
 <CardModal
@@ -699,25 +787,16 @@
 
 <div class="deck-info">
     <div class="deck-name-container">
-        <input class="deck-name" type="text" placeholder="卡组名称" />
-    </div>
-    <div>
-        添加模式：
-        {#each options as opt}
-            <label>
-                <input
-                    type="radio"
-                    name="selectType"
-                    bind:group={selectMode}
-                    value={opt.value}
-                />
-                {opt.label}
-            </label>
-        {/each}
+        <input
+            class="deck-name"
+            type="text"
+            bind:value={deckName}
+            placeholder="卡组名称"
+        />
     </div>
     <div>
         <button aria-label="取消" onclick={goBack}>取消</button>
-        <button aria-label="完成">完成</button>
+        <button aria-label="完成" onclick={beforeSaveDeck}>完成</button>
     </div>
 </div>
 
@@ -741,6 +820,21 @@
 <div class="page">
     <div class="part sidebar">
         <div class="deck">
+            <div class="selected-mode">
+                添加模式：
+                {#each options as opt}
+                    <label>
+                        <input
+                            type="radio"
+                            name="selectMode"
+                            bind:group={selectMode}
+                            value={opt.value}
+                        />
+                        {opt.label}
+                    </label>
+                {/each}
+                <hr />
+            </div>
             <div class="deck-container">
                 {#each Object.entries(deck) as [zoneKey, cards]}
                     <!-- {#if cards.length > 0} -->
@@ -758,11 +852,6 @@
                                     0,
                                 )}/{zoneLimit[zoneKey]})
                             </div>
-                            {#if false}
-                                <button aria-label="info">
-                                    <i class="fa-solid fa-circle-info"></i>
-                                </button>
-                            {/if}
                         </h6>
 
                         <div class="cards">
@@ -771,6 +860,8 @@
                                 <div
                                     role="presentation"
                                     class="deckcard"
+                                    id={`${zoneKey}-${cardDeck.card_no}`}
+                                    title={result.errors.join("\n")}
                                     onclick={() => {
                                         const index = deck[zoneKey].findIndex(
                                             (c) =>
@@ -867,6 +958,7 @@
                 <option value="energy-desc">法力↓</option>
                 <option value="return_energy-asc">符能↑</option>
                 <option value="return_energy-desc">符能↓</option>
+                <option value="card_category_name-desc">类型</option>
             </select>
             <button onclick={() => (filterVisible = true)}>筛选</button>
             {#if hasFilter}
@@ -1112,6 +1204,11 @@
         border-bottom: 1px solid var(--muted);
     }
 
+    .selected-mode {
+        font-size: small;
+        font-weight: bold;
+    }
+
     div.deck-name-container {
         padding: 5px;
         width: 218px;
@@ -1166,6 +1263,7 @@
         cursor: pointer;
         font-weight: bold;
         display: flex;
+        align-items: center;
         justify-content: space-between;
     }
 

@@ -403,21 +403,17 @@ export async function searchCards({
 
 // 保存/更新卡组
 export async function saveDeck(deckData) {
-  return await db.execute('BEGIN TRANSACTION');
   try {
     let deckId;
 
     if (deckData.id) {
-      // 更新现有卡组
       await db.execute(
         'UPDATE decks SET name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
         [deckData.name, deckData.id]
       );
       deckId = deckData.id;
-      // 删除旧的卡牌记录
       await db.execute('DELETE FROM deck_cards WHERE deck_id = ?', [deckId]);
     } else {
-      // 新建卡组
       const result = await db.execute(
         'INSERT INTO decks (name, description) VALUES (?, ?)',
         [deckData.name, deckData.description]
@@ -425,27 +421,26 @@ export async function saveDeck(deckData) {
       deckId = result.lastInsertId;
     }
 
-    // 插入各区域卡牌
     const zones = ['legend', 'chosen', 'main', 'runes', 'sideboard', 'battlefield'];
     for (const zone of zones) {
       const cards = deckData[zone] || [];
       for (const card of cards) {
         await db.execute(
           `INSERT INTO deck_cards (deck_id, card_no, zone, quantity) 
-                     VALUES (?, ?, ?, ?)`,
-          [deckId, card.card_no, zone, card.quantity]
+           VALUES (?, ?, ?, ?)`,
+          [deckId, card.card_no, zone, card.quantity ?? 1]
         );
       }
     }
 
-    await db.execute('COMMIT');
     return deckId;
 
   } catch (error) {
-    await db.execute('ROLLBACK');
+    console.error("❌ 保存卡组失败：", error);
     throw error;
   }
 }
+
 
 // 加载卡组列表（简要信息）
 // 加载卡组列表（包含英雄信息）
@@ -454,13 +449,14 @@ export async function loadDeckList() {
   // 先获取基础列表
   const deckList = await db.select(`
         SELECT d.*, 
-               COUNT(DISTINCT dc.id) as total_cards
+               COALESCE(SUM(dc.quantity), 0) AS total_cards
         FROM decks d
         LEFT JOIN deck_cards dc ON d.id = dc.deck_id
         GROUP BY d.id
         ORDER BY d.updated_at DESC
     `);
 
+  console.log(deckList);
   // 为每个卡组获取英雄信息
   for (let deck of deckList) {
     const legend = await db.select(`
@@ -472,9 +468,15 @@ export async function loadDeckList() {
         `, [deck.id]);
 
     deck.legend = legend[0] || null;
-    deck.legend_card_no = deck.legend?.card_no || null;
-    deck.legend_name = deck.legend?.card_name || '无传奇';
-    deck.legend_colors = JSON.parse(deck.legend?.card_color_list || []);
+    deck.legend_card_no = deck?.legend?.card_no || null;
+    deck.legend_name = deck?.legend?.card_name || '无传奇';
+    try {
+      const colorList = deck?.legend?.card_color_list;
+      deck.legend_colors = colorList ? JSON.parse(colorList) : [];
+    } catch (e) {
+      console.warn("解析颜色列表失败:", deck?.legend?.card_color_list, e);
+      deck.legend_colors = [];
+    }
   }
 
   return deckList;

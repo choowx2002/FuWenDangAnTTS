@@ -155,7 +155,8 @@
 
     onMount(async () => {
         decks = await loadDeckList();
-        decks = fakeData;
+        console.log(decks);
+        // decks = fakeData;
         // startTTSServer((msg) => {
         //     logs.push("收到TTS回调: " + JSON.stringify(msg));
         // });

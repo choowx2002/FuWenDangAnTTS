@@ -59,6 +59,16 @@
 
     $: currentStatus = $syncTTSConnection;
 
+    $: hasFilter =
+        (Object.keys(queryOptions).length > 0 &&
+            Object.values(queryOptions).some(
+                (arr) => Array.isArray(arr) && arr.length > 0,
+            )) ||
+        query.trim() !== "" ||
+        !arraysEqual(powerValues, powerLimit) ||
+        !arraysEqual(energyValues, energyLimit) ||
+        !arraysEqual(mightValues, mightLimit);
+
     const selectedFilters = writable({});
 
     const updateRange = async () => {
@@ -102,19 +112,6 @@
         Array.isArray(b) &&
         a.length === b.length &&
         a.every((v, i) => v === b[i]);
-
-    const checkFilterExists = () => {
-        return (
-            (Object.keys(queryOptions).length > 0 &&
-                Object.values(queryOptions).some(
-                    (arr) => Array.isArray(arr) && arr.length > 0,
-                )) ||
-            query.trim() !== "" ||
-            !arraysEqual(powerValues, powerLimit) ||
-            !arraysEqual(energyValues, energyLimit) ||
-            !arraysEqual(mightValues, mightLimit)
-        );
-    };
 
     async function loadCards(reset = false) {
         if (loading) return;
@@ -267,7 +264,7 @@
         <option value="return_energy-desc">符能（降序↓）</option>
     </select>
     <button onclick={() => (filterVisible = true)}>筛选</button>
-    {#if checkFilterExists()}
+    {#if hasFilter}
         <button onclick={clearAllFilters}>重置</button>
     {/if}
     {#if currentStatus}

@@ -16,9 +16,11 @@
     "@fortawesome/fontawesome-free": "^7.1.0",
     "@supabase/supabase-js": "^2.74.0",
     "@tauri-apps/api": "^2.8.0",
+    "@tauri-apps/plugin-dialog": "~2.4.0",
     "@tauri-apps/plugin-fs": "^2.4.2",
     "@tauri-apps/plugin-opener": "^2",
-    "@tauri-apps/plugin-sql": "^2.3.0"
+    "@tauri-apps/plugin-sql": "^2.3.0",
+    "html2canvas-pro": "^1.5.12"
   },
   "devDependencies": {
     "@sveltejs/adapter-static": "^3.0.6",

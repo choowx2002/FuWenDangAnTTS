@@ -1,5 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { get } from "svelte/store";
+import { selectedTTSColor } from "./stores.js";
 
 export async function detectTTSServer() {
     try {
@@ -61,5 +63,52 @@ export async function sendToTTS(deck) {
     return await invoke("send_to_tts", {
         message: JSON.stringify(msg)
     });
+}
+
+export async function sendToTTSTesting(deck) {
+    const deckString = deckToString([...deck]);
+    const color = get(selectedTTSColor);
+    const msg = {
+        messageID: 2,
+        customMessage: {
+            action: "spawntest",
+            deck: deckString,
+            color
+        }
+    };
+
+    console.log(msg);
+
+
+    return await invoke("send_to_tts", {
+        message: JSON.stringify(msg)
+    });
+}
+
+function deckToString(deck) {
+    return deck
+        .map(card => {
+            const encode = str =>
+                String(str || "")
+                    .replace(/\r/g, "")
+                    .replace(/\n/g, "\\n")
+                    .replace(/\|/g, "｜")
+
+            const fullName = [
+                card.card_no || " ",
+                card.card_name || "无名",
+                card.sub_title ? `- ${card.sub_title}` : ""
+            ].filter(Boolean).join(" ")
+
+            const parts = [
+                fullName,
+                encode(card.card_effect || card.flavor_text || "无效果"),
+                card.back_image || "",
+                card.front_image_en || "",
+                card.quantity ?? 1,
+            ]
+
+            return `###CARD###\n${parts.join("|")}`
+        }).join("\n");
 }
 

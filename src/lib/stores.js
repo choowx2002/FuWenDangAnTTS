@@ -4,3 +4,5 @@ import { writable } from 'svelte/store';
 export const syncDataRefresh = writable(null);
 
 export const syncTTSConnection = writable(false);
+
+export const selectedTTSColor = writable("Black");

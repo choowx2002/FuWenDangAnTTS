@@ -8,7 +8,7 @@
     import { urlMap } from "$lib/resManager";
     import CardModal from "../../components/CardModal.svelte";
     import { syncTTSConnection } from "$lib/stores";
-    import { sendToTTS } from "$lib/ttsClient";
+    import { sendToTTSTesting } from "$lib/ttsClient";
     import BottomToast from "../../components/BottomToast.svelte";
 
     let filters = {
@@ -213,7 +213,7 @@
     let selectedCard = null;
     async function spawnCards() {
         if (currentStatus) {
-            sendToTTS(selectedCard.card_no).catch((reason) => {
+            sendToTTSTesting([selectedCard]).catch((reason) => {
                 showToast("未连接。请打开并连接到TTS。", "error");
             });
             return;
@@ -443,7 +443,7 @@
             class="card"
             onclick={() => {
                 if (addingMode) {
-                    sendToTTS(card.card_no).catch((reason) => {
+                    sendToTTSTesting([card]).catch((reason) => {
                         showToast("未连接。请打开并连接到TTS。", "error");
                     });
                     return;

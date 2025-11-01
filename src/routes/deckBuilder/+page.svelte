@@ -4,6 +4,7 @@
     import {
         getDiffLimits,
         getDistinctFilters,
+        loadDeck,
         saveDeck,
         searchCards,
     } from "$lib/db";
@@ -13,6 +14,7 @@
     import { preventDefault } from "svelte/legacy";
     import { urlMap } from "$lib/resManager";
     import RangeSlider from "svelte-range-slider-pips";
+    import { page } from "$app/state";
 
     let deck = {
         legend: [],
@@ -57,7 +59,7 @@
     let isAsc = true;
     let cards = [];
     let imageUrls = {};
-    let page = 1;
+    let page_num = 1;
     let total = 0;
     let loading = false;
     let hasMore = true;
@@ -74,6 +76,8 @@
     let contextMenuX = 0;
     let contextMenuY = 0;
     let selectMode = "default";
+    let deckName = null;
+    let deckDesc = null;
     const options = [
         { value: "default", label: "默认" },
         { value: "sideboard", label: "备牌" },
@@ -88,6 +92,7 @@
         !arraysEqual(powerValues, powerLimit) ||
         !arraysEqual(energyValues, energyLimit) ||
         !arraysEqual(mightValues, mightLimit);
+    $: deckId = page.url.searchParams.get("deckId");
 
     const updateRange = async () => {
         const res = await getDiffLimits();
@@ -142,7 +147,7 @@
         observer = new IntersectionObserver(
             async (entries) => {
                 if (entries[0].isIntersecting && !loading && hasMore) {
-                    page++;
+                    page_num++;
                     await loadCards();
                 }
             },
@@ -164,7 +169,7 @@
         }
 
         if (reset) {
-            page = 1;
+            page_num = 1;
             cards = [];
             // imageUrls = {};
             hasMore = true;
@@ -187,7 +192,7 @@
 
         const { rows, total: t } = await searchCards({
             query,
-            page,
+            page: page_num,
             orderBy,
             isAsc,
             might,
@@ -271,7 +276,7 @@
             case "专属装备":
             case "专属单位":
             case "专属法术": {
-                 const inputzone =
+                const inputzone =
                     selectMode === "default" ? "main" : "sideboard";
                 if (
                     deck[inputzone].reduce(
@@ -283,7 +288,7 @@
                     return;
                 }
 
-                 const threeCombineDeck = [
+                const threeCombineDeck = [
                     ...deck.chosen,
                     ...deck.main,
                     ...deck.sideboard,
@@ -483,6 +488,61 @@
         await updateRange();
         initObserver();
         await loadCards(true);
+        if (deckId) {
+            try {
+                const dbDeck = await loadDeck(deckId);
+                deckName = dbDeck.name;
+                const zoneTypes = [
+                    "legend",
+                    "chosen",
+                    "main",
+                    "runes",
+                    "battlefield",
+                    "sideboard",
+                ];
+
+                const promises = [];
+
+                for (const zone of zoneTypes) {
+                    if (!dbDeck[zone] || !dbDeck[zone].length) continue;
+
+                    for (const d of dbDeck[zone]) {
+                        const cardno_filter = d.card_no.replace("*", "s");
+
+                        if (!imageUrls[d.card_no]) {
+                            const p = loadExternalImage(
+                                `${cardno_filter}.png`,
+                            ).then((url) => {
+                                imageUrls[d.card_no] = url;
+                            });
+                            promises.push(p);
+                        }
+                    }
+                }
+
+                await Promise.all(promises);
+                const tempDeck = {};
+                for (const zone of zoneTypes) {
+                    if (!dbDeck[zone] || !dbDeck[zone].length) continue;
+
+                    dbDeck[zone].forEach((d) => {
+                        const cardData = {
+                            card_no: d.card_no,
+                            zone: d.zone,
+                            quantity: d.quantity,
+                            img: imageUrls[d.card_no],
+                            data: d,
+                        };
+                        (tempDeck[zone] ??= []).push(cardData);
+                    });
+                }
+                deck = { ...tempDeck };
+            } catch (error) {
+                console.log(error);
+            }
+
+            console.log(deck);
+        }
     });
 
     const zoneNames = {
@@ -768,10 +828,6 @@
                 console.log("err: ", err);
             });
     };
-
-    let deckId = null;
-    let deckName = null;
-    let deckDesc = null;
 </script>
 
 <CardModal

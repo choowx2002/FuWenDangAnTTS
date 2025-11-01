@@ -7,7 +7,11 @@
     import { onMount } from "svelte";
     import { getDB, getVersion, upsertCards, upsertVersion } from "$lib/db";
     import { fetchCards, fetchVersion } from "$lib/supabaseClient.js";
-    import { syncDataRefresh, syncTTSConnection } from "$lib/stores";
+    import {
+        selectedTTSColor,
+        syncDataRefresh,
+        syncTTSConnection,
+    } from "$lib/stores";
     import { detectTTSServer } from "$lib/ttsClient";
     import { initSingletonMap, urlMap } from "$lib/resManager";
     import Popup from "../components/Popup.svelte";
@@ -159,6 +163,22 @@
             checkingConnectionStatus = false;
         }
     }
+
+    const colorMap = {
+        Black: "rgb(0,0,0)",
+        Red: "rgb(218,26,24)",
+        Green: "rgb(49,179,43)",
+        Purple: "rgb(160,32,240)",
+        Blue: "rgb(30,135,255)",
+    };
+
+    const colorOptions = [
+        { name: "无色", value: "Black" },
+        { name: "蓝色", value: "Blue" },
+        { name: "红色", value: "Red" },
+        { name: "紫色", value: "Purple" },
+        { name: "绿色", value: "Green" },
+    ];
 </script>
 
 <!-- ======= 标题栏 ======= -->
@@ -241,7 +261,7 @@
                 type="button"
                 title="首页"
             >
-               <span>首页</span>
+                <span>首页</span>
             </button>
 
             <button
@@ -265,6 +285,20 @@
             </button>
 
             <div class="bottom-btn-group">
+
+                <div class="color-row">
+                    <select id="color-select" bind:value={$selectedTTSColor} style="color: {colorMap[$selectedTTSColor]}">
+                        {#each colorOptions as option}
+                            <option
+                                value={option.value}
+                                style="color: {colorMap[option.value]};"
+                            >
+                                {option.name} ■
+                            </option>
+                        {/each}
+                    </select>
+                </div>
+
                 <button
                     class="connection-btn"
                     type="button"
@@ -526,5 +560,16 @@
         flex-grow: 1;
         overflow-y: auto;
         background-color: var(--card-background);
+    }
+
+    select {
+        /* all: unset; */
+        width: 100%;
+        margin-bottom: 10px;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        background-color: var(--card-background);
+        font-family: monospace;
     }
 </style>

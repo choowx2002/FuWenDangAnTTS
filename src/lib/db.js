@@ -484,6 +484,8 @@ export async function loadDeckList() {
 
 // 加载完整卡组数据
 export async function loadDeck(deckId) {
+  await getDB();
+
   const [deck] = await db.select(
     'SELECT * FROM decks WHERE id = ?',
     [deckId]

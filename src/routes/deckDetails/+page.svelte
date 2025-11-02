@@ -98,6 +98,12 @@
     const showToast = (text, type = "info") => {
         message = { id: Date.now(), text, type };
     };
+
+    const getImage = (card) => {
+        return imageUrls[card.card_no]
+            ? imageUrls[card.card_no]
+            : card.front_image_en;
+    };
 </script>
 
 <Loading show={loading} imgSrc="/favicon.png" message="请稍候..." />
@@ -270,12 +276,12 @@
                                 onclick={() => {
                                     showCardModal = true;
                                     selectedCard = card;
-                                    selectedCardImg = imageUrls[card.card_no];
+                                    selectedCardImg = getImage(card);
                                 }}
                                 role="presentation"
                             >
                                 <img
-                                    src={imageUrls[card.card_no]}
+                                    src={getImage(card)}
                                     alt={card.card_name}
                                 />
                                 <!-- <h4>{card.quantity}</h4> -->
@@ -290,12 +296,12 @@
                                 onclick={() => {
                                     showCardModal = true;
                                     selectedCard = card;
-                                    selectedCardImg = imageUrls[card.card_no];
+                                    selectedCardImg = getImage(card);
                                 }}
                                 role="presentation"
                             >
                                 <img
-                                    src={imageUrls[card.card_no]}
+                                    src={getImage(card)}
                                     alt={card.card_name}
                                 />
                                 <h4>{card.quantity}</h4>
@@ -314,13 +320,12 @@
                                     onclick={() => {
                                         showCardModal = true;
                                         selectedCard = card;
-                                        selectedCardImg =
-                                            imageUrls[card.card_no];
+                                        selectedCardImg = getImage(card);
                                     }}
                                     role="presentation"
                                 >
                                     <img
-                                        src={imageUrls[card.card_no]}
+                                        src={getImage(card)}
                                         alt={card.card_name}
                                     />
                                     <h4>{card.quantity}</h4>

@@ -208,7 +208,7 @@
         for (const card of rows) {
             const cardno_filter = card.card_no.replace("*", "s");
             loadExternalImage(`${cardno_filter}.png`).then((url) => {
-                imageUrls[card.card_no] = url;
+                imageUrls[card.card_no] = url ? url : card.front_image_en;
             });
         }
 
@@ -708,7 +708,8 @@
     function handleMenuAction(action) {
         switch (action) {
             case "view":
-                selectedCardImg = imageUrls[selectedCard.card_no];
+                selectedCardImg =
+                    imageUrls[selectedCard.card_no] ?? card.front_image_en;
                 showCardModal = true;
                 break;
             case "copyCardName":

@@ -162,7 +162,7 @@
         for (const card of rows) {
             const cardno_filter = card.card_no.replace("*", "s");
             loadExternalImage(`${cardno_filter}.png`).then((url) => {
-                imageUrls[card.card_no] = url;
+                imageUrls[card.card_no] = url ? url : card.front_image_en;
             });
         }
 
@@ -450,12 +450,19 @@
                 }
                 showCardModal = true;
                 selectedCard = card;
-                selectedCardImg = imageUrls[card.card_no];
+                selectedCardImg = imageUrls[card.card_no]
+                    ? imageUrls[card.card_no]
+                    : card.front_image_en;
             }}
             role="presentation"
         >
-            {#if imageUrls[card.card_no]}
-                <img src={imageUrls[card.card_no]} alt={card.card_name} />
+            {#if imageUrls[card.card_no] || card.front_image_en}
+                <img
+                    src={imageUrls[card.card_no]
+                        ? imageUrls[card.card_no]
+                        : card.front_image_en}
+                    alt={card.card_name}
+                />
             {:else}
                 <div class="placeholder">
                     <img src="/favicon.png" alt={card.card_name} />

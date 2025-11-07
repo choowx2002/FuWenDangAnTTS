@@ -436,7 +436,7 @@ export async function saveDeck(deckData) {
     return deckId;
 
   } catch (error) {
-    console.error("❌ 保存卡组失败：", error);
+    console.error("保存卡组失败：", error);
     throw error;
   }
 }
@@ -456,7 +456,6 @@ export async function loadDeckList() {
         ORDER BY d.updated_at DESC
     `);
 
-  console.log(deckList);
   // 为每个卡组获取英雄信息
   for (let deck of deckList) {
     const legend = await db.select(`
@@ -527,4 +526,26 @@ export async function loadDeck(deckId) {
 // 删除卡组
 export async function deleteDeck(deckId) {
   await db.execute('DELETE FROM decks WHERE id = ?', [deckId]);
+}
+
+export async function getCardsByNo(cardNos = []) {
+  if (!cardNos?.length) return [];
+
+  const db = await getDB();
+  const placeholders = cardNos.map(() => '?').join(', ');
+  const sql = `
+    SELECT 
+      card_no,
+      card_name,
+      sub_title,
+      card_effect,
+      flavor_text,
+      back_image,
+      front_image_en
+    FROM cards
+    WHERE card_no IN (${placeholders})
+  `;
+
+  const rows = await db.select(sql, cardNos);
+  return rows;
 }

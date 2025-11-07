@@ -18,6 +18,7 @@
     import Loading from "../components/Loading.svelte";
     import BottomToast from "../components/BottomToast.svelte";
     import { get } from "svelte/store";
+    import ImoprtDeck from "../components/ImoprtDeck.svelte";
 
     // 当前路径
     $: current = $page.url.pathname;
@@ -33,7 +34,11 @@
     };
     let checkingConnectionStatus = false;
     let store;
+    let showImport = false;
 
+    const openImport = () => {
+        showImport = true;
+    };
     const showToast = (text, type = "info") => {
         message = { id: Date.now(), text, type };
     };
@@ -240,6 +245,12 @@
 
 <!-- ======= 主界面内容 ======= -->
 <div class="app">
+    <ImoprtDeck
+        show={showImport}
+        onCancel={() => {
+            showImport = false;
+        }}
+    />
     <BottomToast {message} />
     <Loading show={loading} imgSrc="/favicon.png" message="请稍候..." />
     <Popup
@@ -285,19 +296,31 @@
             </button>
 
             <div class="bottom-btn-group">
-
-                <div class="color-row">
-                    <select id="color-select" bind:value={$selectedTTSColor} style="color: {colorMap[$selectedTTSColor]}">
-                        {#each colorOptions as option}
-                            <option
-                                value={option.value}
-                                style="color: {colorMap[option.value]};"
-                            >
-                                {option.name} ■
-                            </option>
-                        {/each}
-                    </select>
-                </div>
+                {#if connectionStatus.success || connectionStatus.sendPort}
+                    <div
+                        role="presentation"
+                        class="gen-deck-btn"
+                        on:click={openImport}
+                    >
+                        <div>即时生成</div>
+                    </div>
+                    <div class="color-row">
+                        <select
+                            id="color-select"
+                            bind:value={$selectedTTSColor}
+                            style="color: {colorMap[$selectedTTSColor]}"
+                        >
+                            {#each colorOptions as option}
+                                <option
+                                    value={option.value}
+                                    style="color: {colorMap[option.value]};"
+                                >
+                                    {option.name} ■
+                                </option>
+                            {/each}
+                        </select>
+                    </div>
+                {/if}
 
                 <button
                     class="connection-btn"
@@ -571,5 +594,19 @@
         border: 1px solid #ccc;
         background-color: var(--card-background);
         font-family: monospace;
+    }
+
+    .gen-deck-btn {
+        cursor: pointer;
+        font-size: medium;
+        text-align: center;
+        transition:
+            background 0.2s,
+            color 0.2s;
+        filter: drop-shadow(0 2px 2px #0000002d);
+        margin-bottom: 0.5rem;
+        background: var(--card-background);
+        border-radius: 2px;
+        padding: 1px 0;
     }
 </style>

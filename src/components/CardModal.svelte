@@ -17,11 +17,11 @@
         });
 
         child.once("tauri://created", () => {
-            console.log("✅ 子窗口已成功创建");
+            console.log("子窗口已成功创建");
         });
 
         child.once("tauri://error", (e) => {
-            console.error("❌ 创建子窗口失败：", e);
+            console.error("创建子窗口失败：", e);
         });
     }
 

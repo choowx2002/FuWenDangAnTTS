@@ -74,7 +74,6 @@ const resMap = new Map([
 export const urlMap = new Map();
 
 export const initSingletonMap = async () => {
-    console.count("initSingletonMap")
     const entries = Array.from(resMap.entries());
 
     const loadPromises = entries.map(async ([key, value]) => {

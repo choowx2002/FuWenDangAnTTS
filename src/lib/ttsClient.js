@@ -77,9 +77,6 @@ export async function sendToTTSTesting(deck) {
         }
     };
 
-    console.log(msg);
-
-
     return await invoke("send_to_tts", {
         message: JSON.stringify(msg)
     });

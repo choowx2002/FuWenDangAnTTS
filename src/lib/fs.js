@@ -1,5 +1,5 @@
 import { readFile } from "@tauri-apps/plugin-fs";
-import { resourceDir, join, resolve, resolveResource } from "@tauri-apps/api/path";
+import { resolveResource } from "@tauri-apps/api/path";
 
 const cache = new Map();
 

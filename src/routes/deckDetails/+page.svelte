@@ -381,13 +381,6 @@
         color: var(--background);
     }
 
-    .deck-grid {
-        width: 100%;
-        overflow: hidden;
-        display: grid;
-        grid-template-columns: 300px 1fr;
-    }
-
     .section {
         display: grid;
         grid-template-areas:
@@ -415,12 +408,6 @@
                 "area3"
                 "area4";
         }
-    }
-
-    .section h2 {
-        font-size: 1rem;
-        margin-bottom: 0.4rem;
-        text-align: center;
     }
 
     .card-grid {
@@ -464,22 +451,4 @@
         margin: 0;
         border-radius: 5px 0 0 5px;
     }
-
-    /* .potrait-img.card-grid {
-        display: grid;
-        justify-items: left;
-        grid-template-columns: repeat(auto-fill, 180px);
-    }
-
-    .potrait-img .card {
-        border-radius: 8px;
-    }
-
-    .potrait-img .card img {
-        height: auto;
-        width: auto;
-        transform: rotate(-90deg);
-        transform-origin: center center;
-        display: block;
-    } */
 </style>

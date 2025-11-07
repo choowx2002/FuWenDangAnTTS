@@ -523,8 +523,10 @@
                 await Promise.all(promises);
                 const tempDeck = {};
                 for (const zone of zoneTypes) {
-                    if (!dbDeck[zone] || !dbDeck[zone].length) continue;
-
+                    if (!dbDeck[zone] || !dbDeck[zone].length) {
+                        tempDeck[zone] = []
+                        continue;
+                    }
                     dbDeck[zone].forEach((d) => {
                         const cardData = {
                             card_no: d.card_no,
@@ -755,7 +757,7 @@
         const data = card.data;
 
         // === 1. 传奇相关检查 ===
-        if (deck.legend.length) {
+        if (deck?.legend && deck?.legend?.length) {
             const isChosenZone = zone === "chosen";
 
             if (isChosenZone) {
@@ -1322,10 +1324,6 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-    }
-
-    .zone-title button {
-        all: unset;
     }
 
     .zone .deckcard {

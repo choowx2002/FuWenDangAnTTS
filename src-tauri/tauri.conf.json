@@ -14,7 +14,7 @@
       {
         "title": "pk-tts",
         "decorations": false,
-        "transparent": true,
+        "transparent": false,
         "fullscreen": false,
         "resizable": true,
         "center": true,
@@ -36,6 +36,8 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": ["resources"]
+    "resources": [
+      "resources"
+    ]
   }
 }

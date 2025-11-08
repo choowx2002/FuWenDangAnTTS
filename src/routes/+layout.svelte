@@ -35,6 +35,9 @@
     let checkingConnectionStatus = false;
     let store;
     let showImport = false;
+    let isSubWindow = false;
+
+    $: isSubWindow = $page.url.pathname.startsWith("/hand");
 
     const openImport = () => {
         showImport = true;
@@ -125,6 +128,7 @@
 
     onMount(async () => {
         try {
+            if (isSubWindow) return;
             await initSingletonMap();
             console.log("initializing...");
             const db = await getDB();
@@ -187,205 +191,222 @@
 </script>
 
 <!-- ======= 标题栏 ======= -->
-<div class="titlebar" role="toolbar" aria-label="窗口控制栏">
-    <div class="left">
-        <div class="app-title">符文档案</div>
-    </div>
+{#if current !== "/hand"}
+    <div class="titlebar" role="toolbar" aria-label="窗口控制栏">
+        <div class="left">
+            <div class="app-title">符文档案</div>
+        </div>
 
-    <div class="win-controls">
-        <button
-            class="ctrl"
-            id="btn-min"
-            title="置顶"
-            type="button"
-            on:click={toggleOntop}
-            aria-label="置顶"
-        >
-            {#if isOnTop}
-                <i class="fa-solid fa-thumbtack"></i>
-            {:else}
-                <i class="fa-solid fa-thumbtack-slash"></i>
-            {/if}
-        </button>
-
-        <button
-            class="ctrl min"
-            id="btn-min"
-            title="最小化"
-            type="button"
-            on:click={minimizeWindow}
-            aria-label="最小化窗口"
-        >
-            <i class="fa-solid fa-minus"></i>
-        </button>
-
-        <button
-            class="ctrl fullscreen"
-            id="btn-fullscreen"
-            title="切换全屏"
-            type="button"
-            on:click={toggleFullscreen}
-            aria-label="切换全屏"
-        >
-            <i class="fa-regular fa-square-full"></i>
-        </button>
-
-        <button
-            class="ctrl close"
-            id="btn-close"
-            title="关闭"
-            type="button"
-            on:click={closeWindow}
-            aria-label="关闭窗口"
-        >
-            <i class="fa-solid fa-xmark"></i>
-        </button>
-    </div>
-</div>
-
-<!-- ======= 主界面内容 ======= -->
-<div class="app">
-    <ImoprtDeck
-        show={showImport}
-        onCancel={() => {
-            showImport = false;
-        }}
-    />
-    <BottomToast {message} />
-    <Loading show={loading} imgSrc="/favicon.png" message="请稍候..." />
-    <Popup
-        bind:show={showSyncDialog}
-        title="提示"
-        message="是否要更新数据？"
-        onConfirm={handleConfirm}
-        onCancel={handleCancel}
-        closeOnBackground={false}
-    />
-
-    {#if current !== "/deckBuilder"}
-        <!-- Sidebar -->
-        <nav class="sidebar">
+        <div class="win-controls">
             <button
-                class="nav-btn"
-                class:selected={current === "/"}
-                on:click={() => goto("/")}
+                class="ctrl"
+                id="btn-min"
+                title="置顶"
                 type="button"
-                title="首页"
+                on:click={toggleOntop}
+                aria-label="置顶"
             >
-                <span>首页</span>
-            </button>
-
-            <button
-                class="nav-btn"
-                class:selected={current.startsWith("/list")}
-                on:click={() => goto("/list")}
-                type="button"
-                title="卡牌库"
-            >
-                <span>卡牌图鉴</span>
-            </button>
-
-            <button
-                class="nav-btn"
-                class:selected={current.startsWith("/deck")}
-                on:click={() => goto("/deck")}
-                type="button"
-                title="卡组构筑"
-            >
-                <span>卡组构筑</span>
-            </button>
-
-            <div class="bottom-btn-group">
-                {#if connectionStatus.success || connectionStatus.sendPort}
-                    <div
-                        role="presentation"
-                        class="gen-deck-btn"
-                        on:click={openImport}
-                    >
-                        <div>即时生成</div>
-                    </div>
-                    <div class="color-row">
-                        <select
-                            id="color-select"
-                            bind:value={$selectedTTSColor}
-                            style="color: {colorMap[$selectedTTSColor]}"
-                        >
-                            {#each colorOptions as option}
-                                <option
-                                    value={option.value}
-                                    style="color: {colorMap[option.value]};"
-                                >
-                                    {option.name} ■
-                                </option>
-                            {/each}
-                        </select>
-                    </div>
+                {#if isOnTop}
+                    <i class="fa-solid fa-thumbtack"></i>
+                {:else}
+                    <i class="fa-solid fa-thumbtack-slash"></i>
                 {/if}
+            </button>
+
+            <button
+                class="ctrl min"
+                id="btn-min"
+                title="最小化"
+                type="button"
+                on:click={minimizeWindow}
+                aria-label="最小化窗口"
+            >
+                <i class="fa-solid fa-minus"></i>
+            </button>
+
+            <button
+                class="ctrl fullscreen"
+                id="btn-fullscreen"
+                title="切换全屏"
+                type="button"
+                on:click={toggleFullscreen}
+                aria-label="切换全屏"
+            >
+                <i class="fa-regular fa-square-full"></i>
+            </button>
+
+            <button
+                class="ctrl close"
+                id="btn-close"
+                title="关闭"
+                type="button"
+                on:click={closeWindow}
+                aria-label="关闭窗口"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- ======= 主界面内容 ======= -->
+    <div class="app">
+        <ImoprtDeck
+            show={showImport}
+            onCancel={() => {
+                showImport = false;
+            }}
+        />
+        <BottomToast {message} />
+        <Loading show={loading} imgSrc="/favicon.png" message="请稍候..." />
+        <Popup
+            bind:show={showSyncDialog}
+            title="提示"
+            message="是否要更新数据？"
+            onConfirm={handleConfirm}
+            onCancel={handleCancel}
+            closeOnBackground={false}
+        />
+
+        {#if current !== "/deckBuilder"}
+            <!-- Sidebar -->
+            <nav class="sidebar">
+                <button
+                    class="nav-btn"
+                    class:selected={current === "/"}
+                    on:click={() => goto("/")}
+                    type="button"
+                    title="首页"
+                >
+                    <span>首页</span>
+                </button>
 
                 <button
-                    class="connection-btn"
+                    class="nav-btn"
+                    class:selected={current.startsWith("/list")}
+                    on:click={() => goto("/list")}
                     type="button"
-                    class:isConnected={connectionStatus.success ||
-                        connectionStatus.sendPort}
-                    on:click={checkAllConnections}
-                    title="点击刷新"
+                    title="卡牌库"
                 >
-                    {#if checkingConnectionStatus}
-                        <span style="color: var(--text);">
-                            <i class="fa-solid fa-spinner"></i>
-                        </span>
-                    {:else}
-                        <span class="circle-color">
-                            <i class="fa-solid fa-circle"></i>
-                        </span>
-                    {/if}
-
-                    {#if checkingConnectionStatus}
-                        <span style="color: var(--text);">TTS: 检查中</span>
-                    {:else}
-                        <span
-                            >TTS: {connectionStatus.success ||
-                            connectionStatus.sendPort
-                                ? "已连接"
-                                : "未连接"}</span
-                        >
-                    {/if}
-                    <div
-                        class="connection-popup"
-                        on:click|stopPropagation
-                        role="presentation"
-                    >
-                        <div>
-                            <span>发送端：</span>
-                            <span>
-                                {#if connectionStatus.sendPort}
-                                    <i class="fa-solid fa-check"></i>
-                                {:else}
-                                    <i class="fa-solid fa-xmark"></i>
-                                {/if}
-                            </span>
-                        </div>
-                        <div>
-                            <span>接受端：</span>
-                            <span>
-                                {#if connectionStatus.receivePort}
-                                    <i class="fa-solid fa-check"></i>
-                                {:else}
-                                    <i class="fa-solid fa-xmark"></i>
-                                {/if}
-                            </span>
-                        </div>
-                    </div>
+                    <span>卡牌图鉴</span>
                 </button>
-            </div>
-        </nav>
-    {/if}
 
-    <!-- Main content -->
-    <main class="content">
+                <button
+                    class="nav-btn"
+                    class:selected={current.startsWith("/deck")}
+                    on:click={() => goto("/deck")}
+                    type="button"
+                    title="卡组构筑"
+                >
+                    <span>卡组构筑</span>
+                </button>
+
+                <button
+                    class="nav-btn"
+                    class:selected={current.startsWith("/inGameTools")}
+                    on:click={() => goto("/inGameTools")}
+                    type="button"
+                    inGameTools
+                    title="局内工具"
+                >
+                    <span>局内工具</span>
+                </button>
+
+                <div class="bottom-btn-group">
+                    {#if connectionStatus.success || connectionStatus.sendPort}
+                        <div
+                            role="presentation"
+                            class="gen-deck-btn"
+                            on:click={openImport}
+                        >
+                            <div>即时生成</div>
+                        </div>
+                        <div class="color-row">
+                            <select
+                                id="color-select"
+                                bind:value={$selectedTTSColor}
+                                style="color: {colorMap[$selectedTTSColor]}"
+                            >
+                                {#each colorOptions as option}
+                                    <option
+                                        value={option.value}
+                                        style="color: {colorMap[option.value]};"
+                                    >
+                                        {option.name} ■
+                                    </option>
+                                {/each}
+                            </select>
+                        </div>
+                    {/if}
+
+                    <button
+                        class="connection-btn"
+                        type="button"
+                        class:isConnected={connectionStatus.success ||
+                            connectionStatus.sendPort}
+                        on:click={checkAllConnections}
+                        title="点击刷新"
+                    >
+                        {#if checkingConnectionStatus}
+                            <span style="color: var(--text);">
+                                <i class="fa-solid fa-spinner"></i>
+                            </span>
+                        {:else}
+                            <span class="circle-color">
+                                <i class="fa-solid fa-circle"></i>
+                            </span>
+                        {/if}
+
+                        {#if checkingConnectionStatus}
+                            <span style="color: var(--text);">TTS: 检查中</span>
+                        {:else}
+                            <span
+                                >TTS: {connectionStatus.success ||
+                                connectionStatus.sendPort
+                                    ? "已连接"
+                                    : "未连接"}</span
+                            >
+                        {/if}
+                        <div
+                            class="connection-popup"
+                            on:click|stopPropagation
+                            role="presentation"
+                        >
+                            <div>
+                                <span>发送端：</span>
+                                <span>
+                                    {#if connectionStatus.sendPort}
+                                        <i class="fa-solid fa-check"></i>
+                                    {:else}
+                                        <i class="fa-solid fa-xmark"></i>
+                                    {/if}
+                                </span>
+                            </div>
+                            <div>
+                                <span>接受端：</span>
+                                <span>
+                                    {#if connectionStatus.receivePort}
+                                        <i class="fa-solid fa-check"></i>
+                                    {:else}
+                                        <i class="fa-solid fa-xmark"></i>
+                                    {/if}
+                                </span>
+                            </div>
+                        </div>
+                    </button>
+                </div>
+            </nav>
+        {/if}
+
+        <!-- Main content -->
+        <main class="content">
+            <slot />
+        </main>
+    </div>
+{:else}
+    <main class="hand-content">
         <slot />
     </main>
-</div>
+{/if}
 
 <!-- ======= 样式 ======= -->
 <style>
@@ -608,5 +629,13 @@
         background: var(--card-background);
         border-radius: 2px;
         padding: 1px 0;
+    }
+
+    .hand-content {
+        height: 100vh;
+        color: var(--background);
+        justify-content: center;
+        display: flex;
+        align-items: center;
     }
 </style>

@@ -219,6 +219,15 @@
             return;
         }
     }
+
+    async function spawnAllCards() {
+        if (currentStatus) {
+            sendToTTSTesting(cards).catch((reason) => {
+                showToast("未连接。请打开并连接到TTS。", "error");
+            });
+            return;
+        }
+    }
     let message = null;
     const showToast = (text, type = "info") => {
         message = { id: Date.now(), text, type };
@@ -253,6 +262,7 @@
         style="flex:1;padding:6px 10px; border-radius: 5px;
         border: 1px solid var(--muted);"
     />
+    <h5>数量: {total}</h5>
     <select onchange={onSortChange}>
         <option value="card_no-asc">编号（升序↑）</option>
         <option value="card_no-desc">编号（降序↓）</option>
@@ -268,6 +278,9 @@
         <button onclick={clearAllFilters}>重置</button>
     {/if}
     {#if currentStatus}
+        <div>
+             <button onclick={spawnAllCards}>添加全部</button>
+        </div>
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div style="user-select: none;">

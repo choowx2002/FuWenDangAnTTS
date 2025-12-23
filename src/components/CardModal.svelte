@@ -127,10 +127,24 @@
             <!-- 卡片头部信息 -->
             <div class="card-header">
                 <div class="card-basic-info">
-                    <h3 class="card-name">{getSafe(card, "card_name")}</h3>
+                    <h3 class="card-name">
+                        {getSafe(card, "card_name")}
+                        {#if getSafe(card, "card_name_en").split(",")[0]}
+                            <small>
+                                {getSafe(card, "card_name_en").split(",")[0]}
+                            </small>
+                        {/if}
+                    </h3>
                     {#if getSafe(card, "sub_title")}
                         <p class="card-subtitle">
                             {getSafe(card, "sub_title")}
+                            {#if getSafe(card, "card_name_en").split(",").length > 1}
+                                <small>
+                                    {getSafe(card, "card_name_en").split(
+                                        ",",
+                                    )[1]}
+                                </small>
+                            {/if}
                         </p>
                     {/if}
                 </div>
@@ -205,7 +219,12 @@
                         {@html renderCardEffect(getSafe(card, "card_effect"))}
                     </p>
                 {/if}
-
+                <br>
+                {#if getSafe(card, "effect_en")}
+                    <p>
+                            {@html getSafe(card, "effect_en")}
+                    </p>
+                {/if}
                 <!-- 标签和关键词 -->
                 <div class="card-tags">
                     {#if (() => {
@@ -542,7 +561,7 @@
 
     .cancel-button:hover,
     .confirm-button:hover {
-         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
 
     @keyframes fadeIn {

@@ -10,6 +10,7 @@
     import { sendToTTSTesting } from "$lib/ttsClient.js";
     import BottomToast from "../../components/BottomToast.svelte";
     import Loading from "../../components/Loading.svelte";
+    import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 
     let deck = null;
     let imageUrls = {};
@@ -24,6 +25,7 @@
             const dbDeck = await loadDeck(deckId);
             await loadImg(dbDeck);
             deck = dbDeck;
+            console.log(deck);
         } catch (error) {
             console.log(error);
         }
@@ -104,6 +106,30 @@
             ? imageUrls[card.card_no]
             : card.front_image_en;
     };
+
+    const copyDeckCode = async () => {
+        const zoneTypes = [
+            "legend",
+            "chosen",
+            "main",
+            "battlefield",
+            "runes",
+            "sideboard",
+        ];
+        let deckList = [];
+        for (const zone of zoneTypes) {
+            if (!deck[zone] || !deck[zone].length) continue;
+            deck[zone].forEach((element) => {
+                deckList.push(`${element.card_no}-${element.quantity}`);
+            });
+        }
+
+        const deckString = deckList.join(" ");
+        console.log(deckString);
+        await writeText(deckString);
+
+        showToast("复制成功");
+    };
 </script>
 
 <Loading show={loading} imgSrc="/favicon.png" message="请稍候..." />
@@ -123,6 +149,7 @@
         <header class="deck-header">
             <h1>{deck.name}</h1>
             <div class="actions">
+                <button onclick={copyDeckCode}>复制</button>
                 <button onclick={goToBuiderPage}>编辑</button>
                 <button onclick={spwanDeck}>生成</button>
             </div>

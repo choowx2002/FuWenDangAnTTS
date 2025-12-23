@@ -78,7 +78,9 @@ export async function fetchCards() {
       champion_tag,
       keywords,
       series_name,
-      front_image_en
+      front_image_en,
+      card_name_en,
+      effect_en
     `);
 
     const { data, error } = await query;

@@ -46,7 +46,9 @@ export async function getDB() {
         champion_tag TEXT,
         keywords TEXT,
         series_name TEXT DEFAULT '',
-        front_image_en TEXT
+        front_image_en TEXT,
+        card_name_en TEXT DEFAULT '',
+        effect_en TEXT DEFAULT ''
       );
     `);
 
@@ -115,6 +117,7 @@ export async function upsertCards(cards) {
   }
 
   for (const card of cards) {
+    console.log(card)
     try {
       // 序列化字段
       const cardColorList = JSON.stringify(card.card_color_list || []);
@@ -127,13 +130,13 @@ export async function upsertCards(cards) {
           card_color_list, card_qa_list, region, tag, artist,
           card_effect, flavor_text, energy, return_energy, power,
           rarity, rarity_name, extend_rarity, extend_rarity_name,
-          back_image, champion_tag, keywords, series_name, front_image_en
+          back_image, champion_tag, keywords, series_name, front_image_en, card_name_en, effect_en
         ) VALUES (
           ?, ?, ?, ?, ?,
           ?, ?, ?, ?, ?,
           ?, ?, ?, ?, ?,
           ?, ?, ?, ?, ?,
-          ?, ?, ?, ?
+          ?, ?, ?, ?, ?, ?
         )
         ON CONFLICT(card_no) DO UPDATE SET
           card_category=excluded.card_category,
@@ -158,7 +161,10 @@ export async function upsertCards(cards) {
           champion_tag=excluded.champion_tag,
           keywords=excluded.keywords,
           series_name=excluded.series_name,
-          front_image_en=excluded.front_image_en;
+          front_image_en=excluded.front_image_en,
+          card_name_en=excluded.card_name_en, 
+          effect_en=excluded.effect_en
+          ;
       `;
 
       // 每次写操作独立提交，避免数据库锁死
@@ -186,7 +192,9 @@ export async function upsertCards(cards) {
         safeTrim(card.champion_tag),
         keywords,
         safeTrim(card.series_name),
-        safeTrim(card.front_image_en)
+        safeTrim(card.front_image_en),
+        safeTrim(card.card_name_en),
+        safeTrim(card.effect_en)
       ]);
 
 
@@ -322,9 +330,11 @@ export async function searchCards({
       card_effect LIKE ? OR
       card_no LIKE ? OR
       sub_title LIKE ? OR
-      champion_tag LIKE ?
+      champion_tag LIKE ? OR
+      card_name_en LIKE ? OR
+      card_name Like ?
     )`);
-    params.push(`%${query}%`, `%${query}%`, `%${query}%`, `%${query}%`, `%${query}%`);
+    params.push(`%${query}%`, `%${query}%`, `%${query}%`, `%${query}%`, `%${query}%`, `%${query}%`, `%${query}%`);
   }
 
   // 普通字段过滤

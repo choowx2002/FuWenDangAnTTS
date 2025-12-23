@@ -300,7 +300,7 @@
                     <span>卡组构筑</span>
                 </button>
 
-                <button
+                <!-- <button
                     class="nav-btn"
                     class:selected={current.startsWith("/inGameTools")}
                     on:click={() => goto("/inGameTools")}
@@ -309,7 +309,7 @@
                     title="局内工具"
                 >
                     <span>局内工具</span>
-                </button>
+                </button> -->
 
                 <div class="bottom-btn-group">
                     {#if connectionStatus.success || connectionStatus.sendPort}

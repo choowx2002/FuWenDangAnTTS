@@ -25,9 +25,9 @@
             const dbDeck = await loadDeck(deckId);
             await loadImg(dbDeck);
             deck = dbDeck;
-            console.log(deck);
+            //console.log(deck);
         } catch (error) {
-            console.log(error);
+            //console.log(error);
         }
     });
 
@@ -67,7 +67,7 @@
         try {
             await goto(`/deckBuilder?deckId=${deckId}`);
         } catch (error) {
-            console.log("route issue: ", error);
+            //console.log("route issue: ", error);
         }
     };
 
@@ -125,7 +125,7 @@
         }
 
         const deckString = deckList.join(" ");
-        console.log(deckString);
+        //console.log(deckString);
         await writeText(deckString);
 
         showToast("复制成功");

@@ -26,10 +26,6 @@
 
     const playerColors = {};
 
-    onMount(() => {
-        console.log("开始检查");
-    });
-
     function openChildWindow(color) {
         const win = new WebviewWindow(color, {
             url: "/hand", // 前端路由或 HTML

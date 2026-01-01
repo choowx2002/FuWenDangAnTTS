@@ -32,10 +32,10 @@ export async function detectTTSServer() {
 
 // 启动监听 (39998)
 export async function startTTSServer(onMessage) {
-    console.log(onMessage)
+    // console.log(onMessage)
     await invoke("start_tts_listener");
     listen("tts-message", (event) => {
-        console.log("event", event);
+        // console.log("event", event);
         try {
             const data = JSON.parse(event.payload);
             onMessage(data);

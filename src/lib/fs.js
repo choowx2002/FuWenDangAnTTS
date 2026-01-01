@@ -15,7 +15,7 @@ export async function loadExternalImage(fileName, folder = "card_img") {
     cache.set(fileName, url);
     return url;
   } catch (err) {
-    console.warn("加载图片失败:", fileName, err);
+    // console.warn("加载图片失败:", fileName, err);
     return "";
   }
 }

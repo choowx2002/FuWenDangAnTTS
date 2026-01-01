@@ -117,7 +117,6 @@ export async function upsertCards(cards) {
   }
 
   for (const card of cards) {
-    console.log(card)
     try {
       // 序列化字段
       const cardColorList = JSON.stringify(card.card_color_list || []);
@@ -238,12 +237,26 @@ export async function getDistinctFilters() {
     }
   });
 
+  const tagSet = new Set();
+
+  tag.forEach(t => {
+    if (!t || t.tag.trim() === "") return;
+
+    let tagList = t.tag.split("|");
+
+    tagList.forEach(x => {
+      if (x.trim() !== "") {
+        tagSet.add(x.trim());
+      }
+    });
+  });
+
   return {
     series: series.map(r => r.series_name).filter(Boolean).sort((a, b) => a.localeCompare(b)),
     color: ["red", "green", "blue", "orange", "purple", "yellow", "colorless"],
     rarity: ["普通", "不凡", "稀有", "史诗", "异画"],
     type: type.map(r => r.card_category_name).filter(Boolean).sort((a, b) => a.localeCompare(b)),
-    tag: tag.map(r => r.tag).filter(Boolean).sort((a, b) => a.localeCompare(b)),
+    tag: Array.from(tagSet).sort((a, b) => a.localeCompare(b)),
     region: region.map(r => r.region).filter(Boolean).sort((a, b) => a.localeCompare(b)),
     keyword: Array.from(keywordSet).sort((a, b) => a.localeCompare(b)),
   };
@@ -350,10 +363,21 @@ export async function searchCards({
     whereClauses.push(`rarity_name IN (${rarity.map(() => '?').join(',')})`);
     params.push(...rarity);
   }
+  // if (tag?.length) {
+  //   whereClauses.push(`tag IN (${tag.map(() => '?').join(',')})`);
+  //   params.push(...tag);
+  // }
+
   if (tag?.length) {
-    whereClauses.push(`tag IN (${tag.map(() => '?').join(',')})`);
-    params.push(...tag);
+    const tagConditions = tag.map(() => `'|' || tag || '|' LIKE ?`).join(' OR ');
+    
+    whereClauses.push(`(${tagConditions})`);
+    
+    tag.forEach(t => {
+      params.push(`%|${t.trim()}|%`);
+    });
   }
+
   if (region?.length) {
     whereClauses.push(`region IN (${region.map(() => '?').join(',')})`);
     params.push(...region);

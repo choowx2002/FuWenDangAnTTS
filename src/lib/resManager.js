@@ -58,10 +58,14 @@ const resMap = new Map([
     ["瞬息", { label: "瞬息", imgPath: "temporary.png" }],
     ["获得", { label: "获得", imgPath: "add.png" }],
     ["绝念", { label: "绝念", imgPath: "deathknell.png" }],
+    ["百炼", { label: "百炼", imgPath: "equip.png" }],
+    ["装配", { label: "装配", imgPath: "weaponmaster.png" }],
+    ["灵便", { label: "灵便", imgPath: "quick-draw.png" }],
 
     ["坚守", { label: "坚守", imgPath: "shield.png" }],
     ["坚守2", { label: "坚守2", imgPath: "shield2.png" }],
     ["坚守3", { label: "坚守3", imgPath: "shield3.png" }],
+    ["坚守5", { label: "坚守5", imgPath: "shield5.png" }],
 
     ["强攻", { label: "强攻", imgPath: "assault.png" }],
     ["强攻2", { label: "强攻2", imgPath: "assault2.png" }],
@@ -69,6 +73,26 @@ const resMap = new Map([
 
     ["法盾", { label: "法盾", imgPath: "deflect.png" }],
     ["法盾2", { label: "法盾2", imgPath: "deflect2.png" }],
+
+    // 回响系列
+    ["回响", { label: "回响", imgPath: "repeat.png" }],
+    ["回响1", { label: "回响1", imgPath: "repeat_1.png" }],
+    ["回响2", { label: "回响2", imgPath: "repeat_2.png" }],
+    ["回响3", { label: "回响3", imgPath: "repeat_3.png" }],
+    ["回响1蓝色", { label: "回响1蓝色", imgPath: "repeat_1_blue.png" }],
+    ["回响2红色", { label: "回响2红色", imgPath: "repeat_2_red.png" }],
+    ["回响4蓝色", { label: "回响4蓝色", imgPath: "repeat_4_blue.png" }],
+
+    ["装配1蓝色", { label: "装配1蓝色", imgPath: "equip_1_blue.png" }],
+    ["装配1绿色", { label: "装配1绿色", imgPath: "equip_1_green.png" }],
+    ["装配1橙色", { label: "装配1橙色", imgPath: "equip_1_orange.png" }],
+
+    ["装配红色", { label: "装配红色", imgPath: "equip_red.png" }],
+    ["装配蓝色", { label: "装配蓝色", imgPath: "equip_blue.png" }],
+    ["装配绿色", { label: "装配绿色", imgPath: "equip_green.png" }],
+    ["装配黄色", { label: "装配黄色", imgPath: "equip_yellow.png" }],
+    ["装配橙色", { label: "装配橙色", imgPath: "equip_orange.png" }],
+    ["装配紫色", { label: "装配紫色", imgPath: "equip_purple.png" }],
 ]);
 
 export const urlMap = new Map();

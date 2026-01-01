@@ -284,7 +284,7 @@
                         0,
                     ) >= zoneLimit[inputzone]
                 ) {
-                    console.log(inputzone, "满了");
+                    // //console.log(inputzone, "满了");
                     return;
                 }
 
@@ -303,7 +303,7 @@
                     signatures.reduce((sum, c) => sum + (c.quantity || 1), 0) >=
                     3
                 ) {
-                    console.log("专属满了");
+                    //console.log("专属满了");
                     return;
                 }
 
@@ -357,7 +357,7 @@
                         0,
                     ) >= zoneLimit[inputzone]
                 ) {
-                    console.log("主卡堆满了");
+                    //console.log("主卡堆满了");
                     return;
                 }
 
@@ -415,7 +415,7 @@
                     deck.runes.reduce((sum, c) => sum + (c.quantity || 1), 0) >=
                     12
                 ) {
-                    console.log("符文满了");
+                    //console.log("符文满了");
                     return;
                 }
                 const existingIndex = deck.runes.findIndex(
@@ -453,7 +453,7 @@
                         0,
                     ) >= 3
                 ) {
-                    console.log("战场满了");
+                    //console.log("战场满了");
                     return;
                 }
                 const existingIndex = deck.battlefield.findIndex(
@@ -540,10 +540,10 @@
                 }
                 deck = { ...tempDeck };
             } catch (error) {
-                console.log(error);
+                //console.log(error);
             }
 
-            console.log(deck);
+            //console.log(deck);
         }
     });
 
@@ -812,7 +812,7 @@
             deck[zoneKey]?.some((c) => c?.errors?.length > 0);
         for (const zone in deck) {
             if (!Object.hasOwn(deck, zone)) continue;
-            console.log(zone, deck[zone]);
+            //console.log(zone, deck[zone]);
         }
 
         const newDeckData = {
@@ -824,11 +824,11 @@
 
         saveDeck(newDeckData)
             .then((id) => {
-                console.log("ID: ", id);
+                //console.log("ID: ", id);
                 goBack();
             })
             .catch((err) => {
-                console.log("err: ", err);
+                //console.log("err: ", err);
             });
     };
 </script>

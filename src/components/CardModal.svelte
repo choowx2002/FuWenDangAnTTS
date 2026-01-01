@@ -2,28 +2,8 @@
     // @ts-nocheck
     import { urlMap } from "$lib/resManager";
     import { parse } from "svelte/compiler";
-    import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
     import { onMount } from "svelte";
     import BottomToast from "./BottomToast.svelte";
-
-    function openChildWindow() {
-        const child = new WebviewWindow("child-window", {
-            url: "https://github.com/tauri-apps/tauri",
-            title: "预览窗口",
-            width: 800,
-            height: 600,
-            resizable: true,
-            center: true,
-        });
-
-        child.once("tauri://created", () => {
-            console.log("子窗口已成功创建");
-        });
-
-        child.once("tauri://error", (e) => {
-            console.error("创建子窗口失败：", e);
-        });
-    }
 
     export let show = false; // 控制显示/隐藏
     export let card = null; // 卡片数据对象
@@ -33,9 +13,7 @@
     export let cancelText = "关闭";
     export let onConfirm = () => {};
     export let onCancel = () => {};
-
-    // 点击背景关闭（可选）
-    export let closeOnBackground = true;
+    export let closeOnBackground = false;
 
     // 处理背景点击
     function handleBackgroundClick(e) {
@@ -44,7 +22,6 @@
         }
     }
 
-    // 辅助函数：安全访问嵌套属性
     function getSafe(obj, path, defaultValue = "") {
         return path
             .split(".")
@@ -60,7 +37,6 @@
      * @returns {string} - 替换后的 HTML 字符串
      */
     function renderCardEffect(text) {
-        // openChildWindow();
         if (!text) return "";
 
         // 替换 {{关键字}}
@@ -118,7 +94,7 @@
         tabindex="0"
         on:click={handleBackgroundClick}
         on:keydown={(e) => {
-            if ((e.key === "Enter" || e.key === " ") && closeOnBackground) {
+            if (e.key === "Escape") {
                 onCancel();
             }
         }}
@@ -259,7 +235,9 @@
                     {/if}
 
                     {#if card.tag}
-                        <span class="tag champion">{card.tag}</span>
+                            {#each card.tag.split("|") as t }
+                                <span class="tag champion">{t}</span>
+                            {/each}
                     {/if}
                 </div>
             </div>

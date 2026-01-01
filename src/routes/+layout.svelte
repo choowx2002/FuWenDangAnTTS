@@ -148,7 +148,7 @@
                 showToast("当前处于离线模式，跳过更新检查。");
             }
             isOnTop = await getCurrentWindow().isAlwaysOnTop();
-            await checkAllConnections();
+            // await checkAllConnections();
         } catch (err) {
             console.error("检查更新失败:", err);
         }

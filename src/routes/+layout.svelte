@@ -267,7 +267,7 @@
             closeOnBackground={false}
         />
 
-        {#if current !== "/deckBuilder"}
+        {#if current !== "/deckBuilder" && current !== "/ImageViewer"}
             <!-- Sidebar -->
             <nav class="sidebar">
                 <button

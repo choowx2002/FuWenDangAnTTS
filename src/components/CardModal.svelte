@@ -4,6 +4,7 @@
     import { parse } from "svelte/compiler";
     import { onMount } from "svelte";
     import BottomToast from "./BottomToast.svelte";
+    import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 
     export let show = false; // 控制显示/隐藏
     export let card = null; // 卡片数据对象
@@ -13,7 +14,29 @@
     export let cancelText = "关闭";
     export let onConfirm = () => {};
     export let onCancel = () => {};
-    export let closeOnBackground = false;
+    export let closeOnBackground = true;
+
+    async function openImageViewer() {
+        if (!imgPath) return;
+
+        const label = getSafe(card, "card_no");
+
+        const existingWindow = await WebviewWindow.getByLabel(label);
+
+        if (existingWindow) {
+            await existingWindow.destroy();
+        }
+
+        const webview = new WebviewWindow(label, {
+            url: `/ImageViewer?src=${encodeURIComponent(imgPath)}&title=${encodeURIComponent(getSafe(card, "card_name"))}`,
+            title: getSafe(card, "card_name") || "图片预览",
+            width: 400,
+            height: 600,
+            resizable: true,
+            decorations: false, // 显示标题栏和关闭按钮
+            alwaysOnTop: false, // 预览窗口置顶
+        });
+    }
 
     // 处理背景点击
     function handleBackgroundClick(e) {
@@ -92,7 +115,7 @@
         class="popup-overlay"
         role="dialog"
         tabindex="0"
-        on:click={handleBackgroundClick}
+        on:mousedown={handleBackgroundClick}
         on:keydown={(e) => {
             if (e.key === "Escape") {
                 onCancel();
@@ -131,17 +154,22 @@
 
             <!-- 卡片图片 -->
             {#if imgPath}
+                <!-- svelte-ignore a11y_click_events_have_key_events -->
+                <!-- svelte-ignore a11y_no_static_element_interactions -->
                 <div
                     class={[
                         "card-image",
+                        "clickable-image",
                         {
                             landscape:
                                 getSafe(card, "card_category_name") === "战场",
                         },
                     ]}
+                    on:click={openImageViewer}
                 >
                     <img src={imgPath} alt={getSafe(card, "card_name")} />
                 </div>
+                <div class="zoom-hint">点击查看大图</div>
             {/if}
 
             <!-- 卡片属性 -->
@@ -195,10 +223,10 @@
                         {@html renderCardEffect(getSafe(card, "card_effect"))}
                     </p>
                 {/if}
-                <br>
+                <br />
                 {#if getSafe(card, "effect_en")}
                     <p>
-                            {@html getSafe(card, "effect_en")}
+                        {@html getSafe(card, "effect_en")}
                     </p>
                 {/if}
                 <!-- 标签和关键词 -->
@@ -235,9 +263,9 @@
                     {/if}
 
                     {#if card.tag}
-                            {#each card.tag.split("|") as t }
-                                <span class="tag champion">{t}</span>
-                            {/each}
+                        {#each card.tag.split("|") as t}
+                            <span class="tag champion">{t}</span>
+                        {/each}
                     {/if}
                 </div>
             </div>
@@ -577,5 +605,16 @@
         .card-attributes {
             gap: 8px;
         }
+    }
+
+    .clickable-image {
+        cursor: zoom-in;
+        position: relative;
+    }
+    .zoom-hint {
+        font-size: 10px;
+        color: var(--muted);
+        margin-top: 4px;
+        text-align: center;
     }
 </style>

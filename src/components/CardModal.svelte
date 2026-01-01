@@ -19,7 +19,7 @@
     async function openImageViewer() {
         if (!imgPath) return;
 
-        const label = getSafe(card, "card_no");
+        const label = getSafe(card, "card_no").replace("*", "s");
 
         const existingWindow = await WebviewWindow.getByLabel(label);
 
@@ -28,7 +28,7 @@
         }
 
         const webview = new WebviewWindow(label, {
-            url: `/ImageViewer?src=${encodeURIComponent(imgPath)}&title=${encodeURIComponent(getSafe(card, "card_name"))}`,
+            url: `/ImageViewer?src=${encodeURIComponent(imgPath)}&back=${encodeURIComponent(getSafe(card, "back_image"))}&title=${encodeURIComponent(getSafe(card, "card_name"))}`,
             title: getSafe(card, "card_name") || "图片预览",
             width: 400,
             height: 600,

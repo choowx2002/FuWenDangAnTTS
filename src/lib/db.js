@@ -330,8 +330,10 @@ export async function searchCards({
   might,
   pageSize = 50,
   isAsc = true,
-  orderBy = 'card_no'
+  orderBy = 'card_no',
+  selectModes,
 }) {
+  console.log(selectModes);
   const db = await getDB();
   const params = [];
   let whereClauses = [];
@@ -352,35 +354,123 @@ export async function searchCards({
 
   // 普通字段过滤
   if (series?.length) {
-    whereClauses.push(`series_name IN (${series.map(() => '?').join(',')})`);
-    params.push(...series);
-  }
-  if (type?.length) {
-    whereClauses.push(`card_category_name IN (${type.map(() => '?').join(',')})`);
-    params.push(...type);
-  }
-  if (rarity?.length) {
-    whereClauses.push(`rarity_name IN (${rarity.map(() => '?').join(',')})`);
-    params.push(...rarity);
-  }
-  // if (tag?.length) {
-  //   whereClauses.push(`tag IN (${tag.map(() => '?').join(',')})`);
-  //   params.push(...tag);
-  // }
 
-  if (tag?.length) {
-    const tagConditions = tag.map(() => `'|' || tag || '|' LIKE ?`).join(' OR ');
-    
-    whereClauses.push(`(${tagConditions})`);
-    
-    tag.forEach(t => {
-      params.push(`%|${t.trim()}|%`);
-    });
+    switch (selectModes["series"]) {
+      case 'excludeSelected':
+        // 排除：集合中不能出现任何选中
+        whereClauses.push(`series_name NOT IN (${series.map(() => '?').join(',')})`);
+        params.push(...series);
+        break;
+
+
+      case 'eitherSelected':
+      default:
+        // 任意匹配
+        whereClauses.push(`series_name IN (${series.map(() => '?').join(',')})`);
+        params.push(...series);
+        break;
+    }
+
   }
+
+  if (type?.length) {
+
+    switch (selectModes["type"]) {
+      case 'excludeSelected':
+        // 排除：集合中不能出现任何选中
+        whereClauses.push(`card_category_name NOT IN (${type.map(() => '?').join(',')})`);
+        params.push(...type);
+        break;
+
+
+      case 'eitherSelected':
+      default:
+        // 任意匹配
+        whereClauses.push(`card_category_name IN (${type.map(() => '?').join(',')})`);
+        params.push(...type);
+        break;
+    }
+  }
+
+  if (rarity?.length) {
+    switch (selectModes["rarity"]) {
+      case 'excludeSelected':
+        // 排除：集合中不能出现任何选中
+        whereClauses.push(`rarity_name NOT IN (${rarity.map(() => '?').join(',')})`);
+        params.push(...rarity);
+        break;
+
+
+      case 'eitherSelected':
+      default:
+        // 任意匹配
+        whereClauses.push(`rarity_name IN (${rarity.map(() => '?').join(',')})`);
+        params.push(...rarity);
+        break;
+    }
+  }
+
+if (tag?.length) {
+  // 预处理标签，清理空格
+  const cleanTags = tag.map(t => t.trim()).filter(t => t !== '');
+  if (cleanTags.length === 0) return;
+
+  switch (selectModes["tag"]) {
+    case 'onlySelected':
+      // 1. 确保标签数量一致 (通过计算分隔符 '|' 的数量)
+      whereClauses.push(`(LENGTH(cards.tag) - LENGTH(REPLACE(cards.tag, '|', ''))) = ?`);
+      params.push(cleanTags.length - 1);
+
+      // 2. 确保包含所有选中的标签
+      cleanTags.forEach(t => {
+        whereClauses.push(`'|' || cards.tag || '|' LIKE ?`);
+        params.push(`%|${t}|%`);
+      });
+      break;
+
+    case 'includeSelected':
+      // 必须包含每一个选中的标签 (AND 逻辑)
+      cleanTags.forEach(t => {
+        whereClauses.push(`'|' || cards.tag || '|' LIKE ?`);
+        params.push(`%|${t}|%`);
+      });
+      break;
+      
+    case 'excludeSelected':
+      // 排除逻辑：只要包含其中任意一个，就排除
+      // 使用 NOT EXISTS 或者多个 AND NOT 逻辑更稳健
+      cleanTags.forEach(t => {
+        whereClauses.push(`'|' || COALESCE(cards.tag, '') || '|' NOT LIKE ?`);
+        params.push(`%|${t}|%`);
+      });
+      break;
+
+    case 'eitherSelected':
+    default:
+      // 任意命中一个 (OR 逻辑)
+      const anyMatch = cleanTags.map(() => `'|' || cards.tag || '|' LIKE ?`).join(' OR ');
+      whereClauses.push(`(${anyMatch})`);
+      cleanTags.forEach(t => params.push(`%|${t}|%`));
+      break;
+  }
+}
 
   if (region?.length) {
-    whereClauses.push(`region IN (${region.map(() => '?').join(',')})`);
-    params.push(...region);
+    switch (selectModes["region"]) {
+      case 'excludeSelected':
+        // 排除：集合中不能出现任何选中
+        whereClauses.push(`region NOT IN (${region.map(() => '?').join(',')})`);
+        params.push(...region);
+        break;
+
+
+      case 'eitherSelected':
+      default:
+        // 任意匹配
+        whereClauses.push(`region IN (${region.map(() => '?').join(',')})`);
+        params.push(...region);
+        break;
+    }
   }
 
   // 范围过滤
@@ -399,18 +489,140 @@ export async function searchCards({
 
   // JSON 数组过滤
   if (color?.length) {
-    whereClauses.push(`EXISTS (
-      SELECT 1 FROM json_each(cards.card_color_list)
-      WHERE value IN (${color.map(() => '?').join(',')})
-    )`);
-    params.push(...color);
+    const placeholders = color.map(() => '?').join(',');
+
+    switch (selectModes["color"]) {
+      case 'onlySelected':
+        whereClauses.push(`
+          NOT EXISTS (
+            SELECT 1 FROM json_each(cards.card_color_list)
+            WHERE value NOT IN (${placeholders})
+          )
+        `);
+
+        whereClauses.push(`
+          (
+            SELECT COUNT(DISTINCT value)
+            FROM json_each(cards.card_color_list)
+            WHERE value IN (${placeholders})
+          ) = ?
+        `);
+
+        params.push(...color);
+        params.push(...color);
+        params.push(color.length);
+        break;
+
+
+      case 'includeSelected':
+        // 每个选中都必须存在 json 数组里
+        const mustIncludeAllConditions = color.map(() => `
+          EXISTS (
+            SELECT 1 FROM json_each(cards.card_color_list)
+            WHERE json_each.value = ?
+          )
+        `).join(' AND ');
+
+        whereClauses.push(`(${mustIncludeAllConditions})`);
+
+        // 将所有 color 参数依次 push
+        params.push(...color);
+        break;
+
+      case 'excludeSelected':
+        // 排除：集合中不能出现任何选中
+        whereClauses.push(`
+          NOT EXISTS (
+            SELECT 1 FROM json_each(cards.card_color_list)
+            WHERE value IN (${placeholders})
+          )
+        `);
+        params.push(...color);
+        break;
+
+      case 'eitherSelected':
+      default:
+        // 任意匹配
+        whereClauses.push(`
+        EXISTS (
+          SELECT 1 FROM json_each(cards.card_color_list)
+          WHERE value IN (${placeholders})
+        )
+      `);
+        params.push(...color);
+        break;
+
+    }
   }
+
+
   if (keyword?.length) {
-    whereClauses.push(`EXISTS (
-      SELECT 1 FROM json_each(cards.keywords)
-      WHERE value IN (${keyword.map(() => '?').join(',')})
-    )`);
-    params.push(...keyword);
+    const placeholders = keyword.map(() => '?').join(',');
+
+    switch (selectModes["keyword"]) {
+      case 'onlySelected':
+        // 精确匹配：数量必须相等，且没有多余
+        whereClauses.push(`
+        NOT EXISTS (
+          SELECT 1 FROM json_each(cards.keywords)
+          WHERE value NOT IN (${placeholders})
+        )
+      `);
+
+        whereClauses.push(`
+        (
+          SELECT COUNT(DISTINCT value)
+          FROM json_each(cards.keywords)
+          WHERE value IN (${placeholders})
+        ) = ?
+      `);
+
+        params.push(...keyword);  // for NOT IN
+        params.push(...keyword);  // for IN
+        params.push(keyword.length); // exact count
+        break;
+
+      case 'includeSelected':
+        // 每个选中的关键词都必须存在 json 数组里
+        const mustIncludeAllConditions = keyword.map(() => `
+          EXISTS (
+            SELECT 1 FROM json_each(cards.keywords)
+            WHERE json_each.value = ?
+          )
+        `).join(' AND ');
+
+        whereClauses.push(`(${mustIncludeAllConditions})`);
+
+        // 将所有 keyword 参数依次 push
+        params.push(...keyword);
+        break;
+
+
+      case 'excludeSelected':
+        // 排除：集合中不能出现任何选中关键词
+        whereClauses.push(`
+        NOT EXISTS (
+          SELECT 1 FROM json_each(cards.keywords)
+          WHERE value IN (${placeholders})
+        )
+      `);
+        params.push(...keyword);
+        break;
+
+
+      case 'eitherSelected':
+      default:
+        // 任意匹配：只要有一个关键词匹配
+        whereClauses.push(`
+        EXISTS (
+          SELECT 1 FROM json_each(cards.keywords)
+          WHERE value IN (${placeholders})
+        )
+      `);
+        params.push(...keyword);
+        break;
+    }
+
   }
 
   // 构建 WHERE
@@ -422,10 +634,26 @@ export async function searchCards({
 
   // 分页查询
   const offset = (page - 1) * pageSize;
+  let orderByRules = []
+  if (orderBy === "card_no") {
+    orderByRules = [
+      { col: 'card_no', asc: isAsc }
+    ];
+  } else {
+    orderByRules = [
+      { col: orderBy, asc: isAsc },
+      { col: 'card_no', asc: true }
+    ];
+  }
+
+  const orderBySQL = orderByRules
+    .map(o => `${o.col} ${o.asc ? 'ASC' : 'DESC'}`)
+    .join(', ');
+
   const sql = `
     SELECT * FROM cards
     ${whereSQL}
-    ORDER BY ${orderBy} ${isAsc ? 'ASC' : 'DESC'}
+    ORDER BY ${orderBySQL}
     LIMIT ? OFFSET ?
   `;
   const rows = await db.select(sql, [...params, pageSize, offset]);

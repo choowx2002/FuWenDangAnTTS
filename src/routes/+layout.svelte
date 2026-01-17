@@ -7,6 +7,7 @@
     import { onMount } from "svelte";
     import { getDB, getVersion, upsertCards, upsertVersion } from "$lib/db";
     import { fetchCards, fetchVersion } from "$lib/supabaseClient.js";
+    import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
     import {
         selectedTTSColor,
         syncDataRefresh,
@@ -188,6 +189,26 @@
         { name: "紫色", value: "Purple" },
         { name: "绿色", value: "Green" },
     ];
+
+    async function openSimulator() {
+        const existingWindow = await WebviewWindow.getByLabel("inGameTools");
+
+        if (existingWindow) {
+            await existingWindow.setFocus();
+        }
+
+        const webview = new WebviewWindow("inGameTools", {
+            url: `/inGameTools`,
+            title: "单人模拟",
+            width: 1280,
+            height: 800,
+            // center: true,
+            resizable: true,
+            decorations: false, 
+            alwaysOnTop: false, 
+            dragDropEnabled: false,
+        });
+    }
 </script>
 
 <!-- ======= 标题栏 ======= -->
@@ -267,7 +288,7 @@
             closeOnBackground={false}
         />
 
-        {#if current !== "/deckBuilder" && current !== "/ImageViewer"}
+        {#if current !== "/deckBuilder" && current !== "/ImageViewer" && current !== "/inGameTools"}
             <!-- Sidebar -->
             <nav class="sidebar">
                 <button
@@ -300,16 +321,16 @@
                     <span>卡组构筑</span>
                 </button>
 
-                <!-- <button
+                <button
                     class="nav-btn"
                     class:selected={current.startsWith("/inGameTools")}
-                    on:click={() => goto("/inGameTools")}
+                    on:click={() => openSimulator()}
                     type="button"
                     inGameTools
-                    title="局内工具"
+                    title="单机模拟"
                 >
-                    <span>局内工具</span>
-                </button> -->
+                    <span>单机模拟</span>
+                </button>
 
                 <div class="bottom-btn-group">
                     {#if connectionStatus.success || connectionStatus.sendPort}

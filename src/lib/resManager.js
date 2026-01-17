@@ -58,8 +58,8 @@ const resMap = new Map([
     ["瞬息", { label: "瞬息", imgPath: "temporary.png" }],
     ["获得", { label: "获得", imgPath: "add.png" }],
     ["绝念", { label: "绝念", imgPath: "deathknell.png" }],
-    ["百炼", { label: "百炼", imgPath: "equip.png" }],
-    ["装配", { label: "装配", imgPath: "weaponmaster.png" }],
+    ["装配", { label: "装配", imgPath: "equip.png" }],
+    ["百炼", { label: "百炼", imgPath: "weaponmaster.png" }],
     ["灵便", { label: "灵便", imgPath: "quick-draw.png" }],
 
     ["坚守", { label: "坚守", imgPath: "shield.png" }],

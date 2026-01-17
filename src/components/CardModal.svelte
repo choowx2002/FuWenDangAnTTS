@@ -24,14 +24,16 @@
         const existingWindow = await WebviewWindow.getByLabel(label);
 
         if (existingWindow) {
-            await existingWindow.destroy();
+            await existingWindow.setFocus();
+            return;
         }
 
         const webview = new WebviewWindow(label, {
-            url: `/ImageViewer?src=${encodeURIComponent(imgPath)}&back=${encodeURIComponent(getSafe(card, "back_image"))}&title=${encodeURIComponent(getSafe(card, "card_name"))}`,
+            url: `/ImageViewer?src=${encodeURIComponent(imgPath)}&back=${encodeURIComponent(getSafe(card, "back_image"))}&title=${encodeURIComponent(getSafe(card, "card_name"))}&isLandscape=${getSafe(card, "card_category_name") === "战场"}`,
             title: getSafe(card, "card_name") || "图片预览",
             width: 400,
             height: 600,
+            center: true,
             resizable: true,
             decorations: false, // 显示标题栏和关闭按钮
             alwaysOnTop: false, // 预览窗口置顶
@@ -154,22 +156,20 @@
 
             <!-- 卡片图片 -->
             {#if imgPath}
-                <!-- svelte-ignore a11y_click_events_have_key_events -->
-                <!-- svelte-ignore a11y_no_static_element_interactions -->
                 <div
                     class={[
                         "card-image",
-                        "clickable-image",
                         {
                             landscape:
                                 getSafe(card, "card_category_name") === "战场",
                         },
                     ]}
-                    on:click={openImageViewer}
                 >
-                    <img src={imgPath} alt={getSafe(card, "card_name")} />
+                    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+                    <!-- svelte-ignore a11y_click_events_have_key_events -->
+                    <img on:click={openImageViewer} class="clickable-image" src={imgPath} alt={getSafe(card, "card_name")} />
                 </div>
-                <div class="zoom-hint">点击查看大图</div>
+                <div class="zoom-hint">点击放大</div>
             {/if}
 
             <!-- 卡片属性 -->

@@ -513,7 +513,7 @@
                             const p = loadExternalImage(
                                 `${cardno_filter}.png`,
                             ).then((url) => {
-                                imageUrls[d.card_no] = url;
+                                imageUrls[d.card_no] = d.front_image_en;
                             });
                             promises.push(p);
                         }

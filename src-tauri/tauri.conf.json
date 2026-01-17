@@ -12,7 +12,8 @@
   "app": {
     "windows": [
       {
-        "title": "pk-tts",
+        "dragDropEnabled": false,
+        "title": "符文档案",
         "decorations": false,
         "transparent": false,
         "fullscreen": false,

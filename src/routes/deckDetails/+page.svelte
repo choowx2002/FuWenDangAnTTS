@@ -102,7 +102,9 @@
     };
 
     const getImage = (card) => {
-        return imageUrls[card.card_no]
+        console.log(card)
+        return card.front_image_en;
+        return imageUrls[card.card_no] !== null
             ? imageUrls[card.card_no]
             : card.front_image_en;
     };
@@ -248,12 +250,12 @@
                                 onclick={() => {
                                     showCardModal = true;
                                     selectedCard = card;
-                                    selectedCardImg = imageUrls[card.card_no];
+                                    selectedCardImg = getImage(card);
                                 }}
                                 role="presentation"
                             >
                                 <img
-                                    src={imageUrls[card.card_no]}
+                                    src={getImage(card)}
                                     alt={card.card_name}
                                 />
                                 <!-- <h4>{card.quantity}</h4> -->
@@ -265,12 +267,12 @@
                                 onclick={() => {
                                     showCardModal = true;
                                     selectedCard = card;
-                                    selectedCardImg = imageUrls[card.card_no];
+                                    selectedCardImg = getImage(card);
                                 }}
                                 role="presentation"
                             >
                                 <img
-                                    src={imageUrls[card.card_no]}
+                                    src={getImage(card)}
                                     alt={card.card_name}
                                 />
                                 <!-- <h4>{card.quantity}</h4> -->
@@ -282,12 +284,12 @@
                                 onclick={() => {
                                     showCardModal = true;
                                     selectedCard = card;
-                                    selectedCardImg = imageUrls[card.card_no];
+                                    selectedCardImg = getImage(card);
                                 }}
                                 role="presentation"
                             >
                                 <img
-                                    src={imageUrls[card.card_no]}
+                                    src={getImage(card)}
                                     alt={card.card_name}
                                     title={card.card_name}
                                 />

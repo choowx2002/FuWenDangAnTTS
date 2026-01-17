@@ -3,7 +3,8 @@
     import { onMount } from "svelte";
 
     let src = "";
-    let back = ""; // --- 新增：背面图片 ---
+    let back = "";
+    let isLandscape = false;
     let scale = 0.8;
     let translateX = 0;
     let translateY = -30;
@@ -13,22 +14,27 @@
     // 3D 旋转与翻转状态
     let rotateX = 0;
     let rotateY = 0;
-    let isFlipped = false; // --- 新增：是否已翻转 ---
+    let isFlipped = false;
     const maxTilt = 20;
+
+    let showTools = true;
 
     onMount(() => {
         const params = new URLSearchParams(window.location.href.split("?")[1]);
-        console.log(window.location.href.split("?")[1]);
         src = decodeURIComponent(params.get("src"));
         // --- 获取背面图片 ---
         const backParam = params.get("back");
         back = backParam ? decodeURIComponent(backParam) : "";
 
+        isLandscape = decodeURIComponent(params.get("isLandscape")) == "true" ;
+
         // 监听按键
         const handleKeyDown = (e) => {
-            console.log(e, back, backParam);
             if (e.key.toLowerCase() === "f" && back) {
                 isFlipped = !isFlipped;
+            }
+            if (e.key.toLowerCase() === "r") {
+                reset();
             }
         };
 
@@ -73,7 +79,7 @@
 
             // 如果翻转了，倾斜方向也要相应调整，否则视觉会反
             const flipFactor = isFlipped ? -1 : 1;
-            rotateY = mouseX * maxTilt * flipFactor;
+            rotateY = mouseX * maxTilt * 1;
             rotateX = mouseY * -maxTilt;
         }
     }
@@ -90,6 +96,10 @@
         rotateY = 0;
         isFlipped = false;
     }
+
+    function hideUI() {
+        showTools = !showTools;
+    }
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -104,29 +114,43 @@
         rotateX = 0;
         rotateY = 0;
     }}
+    on:dragend={() => {
+        isDragging = false;
+    }}
 >
-    <div class="toolbar">
-        <div>
-            <span>缩放: {Math.round(scale * 100)}%</span>
-            <button on:click={reset}>重置</button>
+    {#if showTools}
+        <div class="toolbar">
+            <p>缩放: {Math.round(scale * 100)}%</p>
+            <p>滚轮缩放，左键拖拽，</p>
+            <button on:click={flip}>翻转 F</button>
+            <button on:click={reset}>重置 R</button>
+            <button on:click={hideUI}>隐藏UI</button>
         </div>
-        <div>
-            <p>滚轮缩放，左键拖拽，<b>按 <button on:click={flip}>F</button> 翻转卡牌</b></p>
+    {:else}
+        <div class="infoIcon">
+            <!-- svelte-ignore a11y_click_events_have_key_events -->
+            <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+            <h3 on:click={hideUI}>i</h3>
         </div>
-    </div>
+    {/if}
 
     <div
         class="img-wrapper"
         style="transform: translate3d({translateX}px, {translateY}px, 0) scale({scale}) rotateX({rotateX}deg) rotateY({rotateY}deg);"
     >
-        <div class="card-inner" class:is-flipped={isFlipped}>
+        <div class="card-inner" class:is-flipped={isFlipped} class:is-landscape={isLandscape} on:dblclick={flip}>
             <div class="card-face card-front">
                 <img {src} alt="Front" draggable="false" loading="eager" />
             </div>
 
             {#if back}
                 <div class="card-face card-back">
-                    <img src={back} alt="Back" draggable="false" loading="eager" />
+                    <img
+                        src={back}
+                        alt="Back"
+                        draggable="false"
+                        loading="eager"
+                    />
                 </div>
             {/if}
         </div>
@@ -175,7 +199,7 @@
     }
 
     .card-face {
-        backface-visibility: hidden; /* 关键：背向用户时隐藏 */
+        backface-visibility: hidden;
         -webkit-backface-visibility: hidden;
         display: flex;
         align-items: center;
@@ -188,23 +212,30 @@
         left: 0;
         width: 100%;
         height: 100%;
-        transform: rotateY(180deg); /* 背面图片默认先转180度 */
+        transform: rotateY(180deg);
     }
 
     img {
         max-width: 90vw;
         max-height: 90vh;
+        width: 100%;
         user-select: none;
         filter: drop-shadow(0 20px 50px rgba(0, 0, 0, 0.8));
-        image-rendering: high-quality;
         border-radius: 12px;
+        -webkit-user-drag: none;
+        -moz-user-select: none; /* Helps prevent selection */
+        -webkit-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
     }
 
     .toolbar {
         display: flex;
         margin: 0 auto;
-        justify-content: space-between;
         position: fixed;
+        align-items: baseline;
+        align-content: center;
+        justify-content: center;
         bottom: 50px;
         left: 10px;
         right: 10px;
@@ -216,7 +247,36 @@
         border-radius: 8px;
         opacity: 0.3;
         transition: opacity 0.3s;
+        gap: 2%;
     }
+
+    .infoIcon {
+        position: fixed;
+        bottom: 50px;
+        right: 10px;
+        width: 16px;
+        aspect-ratio: 1/1;
+        z-index: 100;
+        background: rgba(0, 0, 0, 1);
+        color: white;
+        padding: 8px;
+        border-radius: 100%;
+        opacity: 0.3;
+        transition: opacity 0.3s;
+
+        h3 {
+            font-size: 16px;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    }
+
+    .infoIcon:hover {
+        opacity: 1;
+    }
+
     .toolbar:hover {
         opacity: 1;
     }
@@ -231,7 +291,15 @@
         margin-left: 4px;
     }
     .toolbar p {
-        font-size: 10px;
+        font-size: 12px;
         margin: 4px 0 0 0;
+    }
+
+    .is-landscape .card-back {
+       transform: rotate(-90deg) rotateY(180deg);
+    }
+
+    .is-landscape .card-front {
+       transform: rotate(-90deg);
     }
 </style>

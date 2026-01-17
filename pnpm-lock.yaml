@@ -38,6 +38,9 @@ importers:
       html2canvas-pro:
         specifier: ^1.5.12
         version: 1.5.12
+      sortablejs:
+        specifier: ^1.15.6
+        version: 1.15.6
     devDependencies:
       '@sveltejs/adapter-static':
         specifier: ^3.0.6
@@ -1566,6 +1569,9 @@ packages:
 
   sliced@1.0.1:
     resolution: {integrity: sha512-VZBmZP8WU3sMOZm1bdgTadsQbcscK0UM8oKxKVBs4XAhUo2Xxzm/OFMGBkPusxw9xL3Uy8LrzEqGqJhclsr0yA==}
+
+  sortablejs@1.15.6:
+    resolution: {integrity: sha512-aNfiuwMEpfBM/CN6LY0ibyhxPfPbyFeBTYJKCvzkJ2GkUpazIt3H+QIPAMHwqQ7tMKaHz1Qj+rJJCqljnf4p3A==}
 
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
@@ -3218,6 +3224,8 @@ snapshots:
       totalist: 3.0.1
 
   sliced@1.0.1: {}
+
+  sortablejs@1.15.6: {}
 
   source-map-js@1.2.1: {}
 

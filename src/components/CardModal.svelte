@@ -356,6 +356,8 @@
         overflow-y: auto;
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
         animation: scaleIn 0.2s ease-out;
+        display: flex;
+        flex-direction: column;
     }
 
     .card-modal-content::-webkit-scrollbar {
@@ -407,6 +409,9 @@
 
     .landscape {
         transform: rotate(270deg);
+        align-self: center;
+        height: auto;
+        width: min-content;
     }
 
     .card-attributes {

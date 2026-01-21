@@ -790,4 +790,16 @@
             max-width: 500px;
         }
     }
+
+        @media (min-width: 767.99px) {
+        .filter-modal {
+            max-width: 1920px;
+        }
+
+        .filter-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            column-gap: 0.8rem;
+        }
+    }
 </style>

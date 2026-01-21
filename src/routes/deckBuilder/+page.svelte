@@ -53,6 +53,55 @@
         color: "符文",
         rarity: "稀有度",
     };
+
+    const modeLabels = {
+        eitherSelected: "任意匹配",
+        onlySelected: "精确匹配",
+        includeSelected: "包含匹配",
+        excludeSelected: "排除匹配",
+    };
+
+    const filterMode = {
+        series: ["eitherSelected", "excludeSelected"],
+        type: ["eitherSelected", "excludeSelected"],
+        rarity: ["eitherSelected", "excludeSelected"],
+        tag: [
+            "eitherSelected",
+            "onlySelected",
+            "includeSelected",
+            "excludeSelected",
+        ],
+        region: ["eitherSelected", "excludeSelected"],
+        keyword: [
+            "eitherSelected",
+            "onlySelected",
+            "includeSelected",
+            "excludeSelected",
+        ],
+        color: [
+            "eitherSelected",
+            "onlySelected",
+            "includeSelected",
+            "excludeSelected",
+        ],
+    };
+
+    let selectModes = {
+        series: "eitherSelected",
+        type: "eitherSelected",
+        tag: "eitherSelected",
+        region: "eitherSelected",
+        keyword: "eitherSelected",
+        color: "eitherSelected",
+        rarity: "eitherSelected",
+    };
+
+    function changeMode(filterKey, newMode) {
+        const modeKey = filterKey;
+        selectModes[modeKey] = newMode;
+        loadCards(true);
+    }
+
     let queryOptions = {};
     let query = "";
     let orderBy = "card_no";
@@ -123,13 +172,17 @@
         loadCards(true);
     }
 
-    function clearAllFilters() {
+    function clearAllFilters(needLoad = true) {
         queryOptions = {};
         query = "";
         mightValues = mightLimit;
         powerValues = powerLimit;
         energyValues = energyLimit;
-        loadCards(true);
+        for (const key in selectModes) {
+            if (!Object.hasOwn(selectModes, key)) continue;
+            selectModes[key] = "eitherSelected";
+        }
+        if (needLoad) loadCards(true);
     }
 
     function onSearch(e) {
@@ -198,6 +251,7 @@
             might,
             energy,
             power,
+            selectModes,
             ...queryOptions,
         });
 
@@ -524,7 +578,7 @@
                 const tempDeck = {};
                 for (const zone of zoneTypes) {
                     if (!dbDeck[zone] || !dbDeck[zone].length) {
-                        tempDeck[zone] = []
+                        tempDeck[zone] = [];
                         continue;
                     }
                     dbDeck[zone].forEach((d) => {
@@ -596,6 +650,7 @@
     };
 
     const filterWithZone = (zone) => {
+        clearAllFilters(false);
         queryOptions = {};
         query = "";
         queryOptions = { ...zoneQuery[zone] };
@@ -1036,59 +1091,6 @@
             <!-- svelte-ignore a11y-click-events-have-key-events -->
             <div class="filter-modal" role="dialog" tabindex="0">
                 <div class="filter-content">
-                    {#each Object.entries(filters) as [key, values]}
-                        <div class="filter-section">
-                            <h4>{filterLabelMap[key.toLowerCase()]}</h4>
-                            <div class="filter-options">
-                                {#each values as v}
-                                    <button
-                                        type="button"
-                                        class="choice {queryOptions[
-                                            key
-                                        ]?.includes(v)
-                                            ? 'active'
-                                            : ''}"
-                                        aria-pressed={queryOptions[
-                                            key
-                                        ]?.includes(v)
-                                            ? "true"
-                                            : "false"}
-                                        onclick={() => toggleFilter(key, v)}
-                                        onkeydown={(e) =>
-                                            (e.key === "Enter" ||
-                                                e.key === " ") &&
-                                            toggleFilter(key, v)}
-                                    >
-                                        {#if key.toLowerCase() === "color"}
-                                            {#if urlMap.get(v)?.url}
-                                                <img
-                                                    class="choice-img"
-                                                    width="24"
-                                                    height="24"
-                                                    src={urlMap.get(v)?.url}
-                                                    alt={urlMap.get(v).label}
-                                                />
-                                            {:else}
-                                                {urlMap.get(v)?.label ?? v}
-                                            {/if}
-                                        {:else if key.toLowerCase() === "rarity"}
-                                            <img
-                                                class="choice-img"
-                                                width="20"
-                                                height="20"
-                                                src={urlMap.get(v)?.url}
-                                                alt={urlMap.get(v).label}
-                                            />
-                                            {v}
-                                        {:else}
-                                            {v}
-                                        {/if}
-                                    </button>
-                                {/each}
-                            </div>
-                        </div>
-                    {/each}
-
                     <div class="filter-section">
                         <div class="filter-label">
                             <h4>战力</h4>
@@ -1170,6 +1172,70 @@
                             bind:values={powerValues}
                         />
                     </div>
+                    {#each Object.entries(filters) as [key, values]}
+                        <div class="filter-section">
+                            <div class="filter-title">
+                                <h4>{filterLabelMap[key.toLowerCase()]}</h4>
+                                <div class="filter-mode">
+                                    <select
+                                        id={key}
+                                        onchange={(e) =>
+                                            changeMode(key, e.target.value)}
+                                        bind:value={selectModes[key]}
+                                    >
+                                        {#each filterMode[key] as mode}
+                                            <option value={mode}
+                                                >{modeLabels[mode]}</option
+                                            >
+                                        {/each}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="filter-options">
+                                {#each values as v}
+                                    <button
+                                        type="button"
+                                        class="choice {queryOptions[
+                                            key
+                                        ]?.includes(v)
+                                            ? 'active'
+                                            : ''}"
+                                        aria-pressed={queryOptions[
+                                            key
+                                        ]?.includes(v)
+                                            ? "true"
+                                            : "false"}
+                                        onclick={() => toggleFilter(key, v)}
+                                    >
+                                        {#if key.toLowerCase() === "color"}
+                                            {#if urlMap.get(v)?.url}
+                                                <img
+                                                    class="choice-img"
+                                                    width="24"
+                                                    height="24"
+                                                    src={urlMap.get(v)?.url}
+                                                    alt={urlMap.get(v).label}
+                                                />
+                                            {:else}
+                                                {urlMap.get(v)?.label ?? v}
+                                            {/if}
+                                        {:else if key.toLowerCase() === "rarity"}
+                                            <img
+                                                class="choice-img"
+                                                width="20"
+                                                height="20"
+                                                src={urlMap.get(v)?.url}
+                                                alt={urlMap.get(v).label}
+                                            />
+                                            {v}
+                                        {:else}
+                                            {v}
+                                        {/if}
+                                    </button>
+                                {/each}
+                            </div>
+                        </div>
+                    {/each}
                 </div>
 
                 <div class="filter-footer">
@@ -1454,16 +1520,43 @@
 
     .filter-section {
         margin-bottom: 12px;
+        border: 0.8px solid rgba(128, 128, 128, 0.377);
+        border-radius: 10px;
+        background-color: rgba(0, 0, 0, 0.075);
     }
 
     .filter-section h4 {
         margin: 2px;
     }
 
+    .filter-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+        column-gap: 10px;
+        margin: 10px 10px 5px;
+        border-bottom: 0.8px solid rgba(128, 128, 128, 0.377);
+        padding-bottom: 1px;
+    }
+
+    .filter-title > div {
+        display: flex;
+        align-items: center;
+        column-gap: 4px;
+    }
+
+    .filter-limit {
+        display: flex;
+        align-items: flex-end;
+        column-gap: 1px;
+        margin: 0;
+    }
+
     .filter-label {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        margin: 10px 10px 5px;
     }
 
     .filter-label * {
@@ -1471,6 +1564,7 @@
     }
 
     .filter-options {
+        margin: 8px 10px 10px;
         display: flex;
         flex-wrap: wrap;
         gap: 6px;
@@ -1599,6 +1693,18 @@
         .filter-modal {
             width: 95%;
             max-width: 500px;
+        }
+    }
+
+    @media (min-width: 767.99px) {
+        .filter-modal {
+            max-width: 1920px;
+        }
+
+        .filter-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            column-gap: 0.8rem;
         }
     }
 

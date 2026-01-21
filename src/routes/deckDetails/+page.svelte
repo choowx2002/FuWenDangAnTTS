@@ -102,9 +102,9 @@
     };
 
     const getImage = (card) => {
-        console.log(card)
+        // console.log(card)
         return card.front_image_en;
-        return imageUrls[card.card_no] !== null
+        return imageUrls[card.card_no] !== null || imageUrls[card.card_no] !== undefined
             ? imageUrls[card.card_no]
             : card.front_image_en;
     };

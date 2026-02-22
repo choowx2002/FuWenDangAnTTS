@@ -102,7 +102,7 @@
         // 处理换行符
         html = html.replace(/\\r\\n|\\n|\\r/g, "<br>");
 
-        return html;
+        return html.trim();
     }
 
     let message = null;
@@ -167,7 +167,12 @@
                 >
                     <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
                     <!-- svelte-ignore a11y_click_events_have_key_events -->
-                    <img on:click={openImageViewer} class="clickable-image" src={imgPath} alt={getSafe(card, "card_name")} />
+                    <img
+                        on:click={openImageViewer}
+                        class="clickable-image"
+                        src={imgPath}
+                        alt={getSafe(card, "card_name")}
+                    />
                 </div>
                 <div class="zoom-hint">点击放大</div>
             {/if}
@@ -219,7 +224,10 @@
 
             <div class="card-effect">
                 {#if getSafe(card, "card_effect")}
-                    <p>
+                    <p
+                        style="white-space: pre-line;
+    word-wrap: break-word;
+    text-align: left;">
                         {@html renderCardEffect(getSafe(card, "card_effect"))}
                     </p>
                 {/if}

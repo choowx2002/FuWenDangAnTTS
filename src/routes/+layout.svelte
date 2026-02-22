@@ -321,7 +321,7 @@
                     <span>卡组构筑</span>
                 </button>
 
-                <button
+                <!-- <button
                     class="nav-btn"
                     class:selected={current.startsWith("/inGameTools")}
                     on:click={() => openSimulator()}
@@ -330,7 +330,7 @@
                     title="单机模拟"
                 >
                     <span>单机模拟</span>
-                </button>
+                </button> -->
 
                 <div class="bottom-btn-group">
                     {#if connectionStatus.success || connectionStatus.sendPort}

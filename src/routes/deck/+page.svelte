@@ -61,6 +61,7 @@
     onMount(async () => {
         window.addEventListener("click", closeMenu);
         decks = await loadDeckList();
+        // console.log(decks);
         // startTTSServer((msg) => {
         //     logs.push("收到TTS回调: " + JSON.stringify(msg));
         // });
@@ -169,10 +170,10 @@
                     }}
                 >
                     <!-- 英雄头像 -->
-                    {#if cardImages[deck.legend_card_no]}
+                    {#if deck.legend.front_image_en}
                         <div
                             class="deck-hero"
-                            style={`background-image: url(${cardImages[deck.legend_card_no]});`}
+                            style={`background-image: url(${deck.legend.front_image_en});`}
                         ></div>
                     {:else}
                         <div class="deck-hero placeholder">?</div>

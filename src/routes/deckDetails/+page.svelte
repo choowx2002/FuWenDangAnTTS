@@ -122,7 +122,9 @@
         for (const zone of zoneTypes) {
             if (!deck[zone] || !deck[zone].length) continue;
             deck[zone].forEach((element) => {
-                deckList.push(`${element.card_no}-${element.quantity}`);
+                for (let i = 0; i < element.quantity; i++) {
+                    deckList.push(`${element.card_no}-1`);
+                }
             });
         }
 

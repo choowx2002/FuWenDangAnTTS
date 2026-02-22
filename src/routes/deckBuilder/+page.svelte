@@ -9,12 +9,14 @@
         searchCards,
     } from "$lib/db";
     import { loadExternalImage } from "$lib/fs";
+    import { goto } from "$app/navigation";
     import { onMount, tick } from "svelte";
     import CardModal from "../../components/CardModal.svelte";
     import { preventDefault } from "svelte/legacy";
     import { urlMap } from "$lib/resManager";
     import RangeSlider from "svelte-range-slider-pips";
     import { page } from "$app/state";
+    import ImportCodeModal from "../../components/ImportCodeModal.svelte";
 
     let deck = {
         legend: [],
@@ -305,6 +307,7 @@
 
     const normalize = (v) => (v ?? "").trim();
     const signatureTypes = new Set(["专属单位", "专属法术", "专属装备"]);
+
     const addToDeck = (card) => {
         const scrollToCard = (id, zone) => {
             setTimeout(() => {
@@ -686,7 +689,7 @@
     };
 
     const goBack = () => {
-        window.history.back();
+        goto("/deck", { replaceState: true });
     };
 
     function handleContextMenu(e, card, zone) {
@@ -883,9 +886,11 @@
                 goBack();
             })
             .catch((err) => {
-                //console.log("err: ", err);
+                console.log("err: ", err);
             });
     };
+
+    let showImport = false;
 </script>
 
 <CardModal
@@ -898,7 +903,16 @@
     isConnected={true}
     onConfirm={() => addToDeck(selectedCard)}
 />
-
+<ImportCodeModal
+    show={showImport}
+    onCancel={() => {
+        showImport = false;
+    }}
+    onDoneImport={(importDeck) => {
+        showImport = false;
+        deck = importDeck;
+    }}
+/>
 <div class="deck-info">
     <div class="deck-name-container">
         <input
@@ -909,6 +923,12 @@
         />
     </div>
     <div>
+        <button
+            aria-label="取消"
+            onclick={() => {
+                showImport = true;
+            }}>导入构筑</button
+        >
         <button aria-label="取消" onclick={goBack}>取消</button>
         <button aria-label="完成" onclick={beforeSaveDeck}>完成</button>
     </div>
@@ -1545,12 +1565,12 @@
         column-gap: 4px;
     }
 
-    .filter-limit {
+    /* .filter-limit {
         display: flex;
         align-items: flex-end;
         column-gap: 1px;
         margin: 0;
-    }
+    } */
 
     .filter-label {
         display: flex;

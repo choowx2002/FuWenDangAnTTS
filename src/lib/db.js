@@ -410,50 +410,50 @@ export async function searchCards({
     }
   }
 
-if (tag?.length) {
-  // 预处理标签，清理空格
-  const cleanTags = tag.map(t => t.trim()).filter(t => t !== '');
-  if (cleanTags.length === 0) return;
+  if (tag?.length) {
+    // 预处理标签，清理空格
+    const cleanTags = tag.map(t => t.trim()).filter(t => t !== '');
+    if (cleanTags.length === 0) return;
 
-  switch (selectModes["tag"]) {
-    case 'onlySelected':
-      // 1. 确保标签数量一致 (通过计算分隔符 '|' 的数量)
-      whereClauses.push(`(LENGTH(cards.tag) - LENGTH(REPLACE(cards.tag, '|', ''))) = ?`);
-      params.push(cleanTags.length - 1);
+    switch (selectModes["tag"]) {
+      case 'onlySelected':
+        // 1. 确保标签数量一致 (通过计算分隔符 '|' 的数量)
+        whereClauses.push(`(LENGTH(cards.tag) - LENGTH(REPLACE(cards.tag, '|', ''))) = ?`);
+        params.push(cleanTags.length - 1);
 
-      // 2. 确保包含所有选中的标签
-      cleanTags.forEach(t => {
-        whereClauses.push(`'|' || cards.tag || '|' LIKE ?`);
-        params.push(`%|${t}|%`);
-      });
-      break;
+        // 2. 确保包含所有选中的标签
+        cleanTags.forEach(t => {
+          whereClauses.push(`'|' || cards.tag || '|' LIKE ?`);
+          params.push(`%|${t}|%`);
+        });
+        break;
 
-    case 'includeSelected':
-      // 必须包含每一个选中的标签 (AND 逻辑)
-      cleanTags.forEach(t => {
-        whereClauses.push(`'|' || cards.tag || '|' LIKE ?`);
-        params.push(`%|${t}|%`);
-      });
-      break;
-      
-    case 'excludeSelected':
-      // 排除逻辑：只要包含其中任意一个，就排除
-      // 使用 NOT EXISTS 或者多个 AND NOT 逻辑更稳健
-      cleanTags.forEach(t => {
-        whereClauses.push(`'|' || COALESCE(cards.tag, '') || '|' NOT LIKE ?`);
-        params.push(`%|${t}|%`);
-      });
-      break;
+      case 'includeSelected':
+        // 必须包含每一个选中的标签 (AND 逻辑)
+        cleanTags.forEach(t => {
+          whereClauses.push(`'|' || cards.tag || '|' LIKE ?`);
+          params.push(`%|${t}|%`);
+        });
+        break;
 
-    case 'eitherSelected':
-    default:
-      // 任意命中一个 (OR 逻辑)
-      const anyMatch = cleanTags.map(() => `'|' || cards.tag || '|' LIKE ?`).join(' OR ');
-      whereClauses.push(`(${anyMatch})`);
-      cleanTags.forEach(t => params.push(`%|${t}|%`));
-      break;
+      case 'excludeSelected':
+        // 排除逻辑：只要包含其中任意一个，就排除
+        // 使用 NOT EXISTS 或者多个 AND NOT 逻辑更稳健
+        cleanTags.forEach(t => {
+          whereClauses.push(`'|' || COALESCE(cards.tag, '') || '|' NOT LIKE ?`);
+          params.push(`%|${t}|%`);
+        });
+        break;
+
+      case 'eitherSelected':
+      default:
+        // 任意命中一个 (OR 逻辑)
+        const anyMatch = cleanTags.map(() => `'|' || cards.tag || '|' LIKE ?`).join(' OR ');
+        whereClauses.push(`(${anyMatch})`);
+        cleanTags.forEach(t => params.push(`%|${t}|%`));
+        break;
+    }
   }
-}
 
   if (region?.length) {
     switch (selectModes["region"]) {
@@ -803,11 +803,29 @@ export async function getCardsByNo(cardNos = []) {
       card_effect,
       flavor_text,
       back_image,
-      front_image_en
+      front_image_en,
+      card_category
     FROM cards
     WHERE card_no IN (${placeholders})
   `;
 
   const rows = await db.select(sql, cardNos);
   return rows;
+}
+
+export async function getCardByNo(cardNo) {
+  if (!cardNo.trim()) return null;
+
+  const db = await getDB();
+
+  const sql = `
+    SELECT 
+      *
+    FROM cards
+    WHERE card_no = ?
+  `;
+
+  const rows = await db.select(sql, [cardNo]);
+  if (rows.length === 0) return null;
+  return rows[0];
 }

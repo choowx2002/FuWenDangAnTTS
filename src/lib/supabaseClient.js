@@ -1,7 +1,6 @@
 // src/lib/supabaseClient.js
 import { createClient } from '@supabase/supabase-js'
 
-// 你在 Supabase 项目中的 URL 和 匿名公钥（anon key）
 const supabaseUrl = 'https://nibzqrneyjrvvzffschp.supabase.co'
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pYnpxcm5leWpydnZ6ZmZzY2hwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3NDQyNzMsImV4cCI6MjA2NjMyMDI3M30.bAGzdYqa1eyvQzSRTxtvzNQVfag44rqybs0JN7RHEjg'
 

@@ -321,6 +321,16 @@
                     <span>卡组构筑</span>
                 </button>
 
+                <button
+                    class="nav-btn"
+                    class:selected={current.startsWith("/settings")}
+                    on:click={() => goto("/settings")}
+                    type="button"
+                    title="设置"
+                >
+                    <span>设置</span>
+                </button>
+
                 <!-- <button
                     class="nav-btn"
                     class:selected={current.startsWith("/inGameTools")}

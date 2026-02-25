@@ -12,6 +12,17 @@ export async function getDB() {
     db = await Database.load('sqlite:local.db');
     await db.execute(`PRAGMA journal_mode = WAL;`);
     await db.execute(`PRAGMA synchronous = NORMAL;`);
+
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS setting_table (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        value TEXT NOT NULL,
+        type INTEGER DEFAULT 0,
+        options TEXT DEFAULT '',
+      );
+    `);
+
     await db.execute(`
       CREATE TABLE IF NOT EXISTS versions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -86,7 +97,6 @@ export async function getDB() {
 const safeTrim = (value) => {
   return typeof value === "string" ? value.trim() : (value ?? "");
 }
-
 
 export async function getVersion(name) {
   const rows = await db.select(

@@ -7,7 +7,7 @@ import {
   BaseDirectory,
 } from "@tauri-apps/plugin-fs";
 
-const CARD_IMAGE = "cardImages";
+export const CARD_IMAGE = "cardImages";
 
 const cache = new Map();
 
